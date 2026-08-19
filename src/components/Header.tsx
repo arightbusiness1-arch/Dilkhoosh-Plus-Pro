@@ -82,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-emerald-400 font-semibold">Attendance</span>
                 <span className="text-gray-500">•</span>
                 <span className="text-sky-400 font-semibold">
-                  {state.role === 'admin' ? 'Admin Panel' : state.role === 'manager' ? 'Manager Portal' : 'Staff Portal'}
+                  {state.role === 'admin' ? 'Admin Panel' : 'Staff Portal'}
                 </span>
                 <span className="text-gray-500">•</span>
                 <span 

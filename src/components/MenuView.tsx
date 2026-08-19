@@ -99,7 +99,7 @@ export const MenuView: React.FC<MenuViewProps> = ({
                 {currentUser?.name || 'Zubayer Ahmed'}
               </h4>
               <span className="text-[8px] font-black px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 whitespace-nowrap">
-                {state.role === 'admin' ? (isBn ? 'এডমিন' : 'Admin') : state.role === 'manager' ? (isBn ? 'ম্যানেজার' : 'Manager') : (isBn ? 'স্টাফ' : 'Staff')}
+                {state.role === 'admin' ? (isBn ? 'এডমিন' : 'Admin') : (isBn ? 'স্টাফ' : 'Staff')}
               </span>
             </div>
             <p className="text-[10px] text-gray-400 truncate whitespace-nowrap mt-0.5">

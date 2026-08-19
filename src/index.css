@@ -59,337 +59,38 @@
   animation: pulse-subtle 3s ease-in-out infinite;
 }
 
-/* LIGHT THEME HIGH-CONTRAST LEGIBILITY OVERRIDES */
-html.light,
-body.light,
-.light {
-  background-color: #e0f2fe !important;
-  color: #0f172a !important;
+
+/* PROFESSIONAL LIGHT THEME STYLING */
+.light, .light body {
+  background-color: #f8fafc !important; /* Soft Slate 50 background */
+  color: #0f172a !important; /* Slate 900 text */
+  font-weight: 450 !important;
 }
 
-/* Light theme card backgrounds & containers */
-.light .bg-\[\#031b33\],
-.light .bg-\[\#021528\],
-.light .bg-\[\#041f3b\],
-.light .bg-\[\#021324\],
-.light .bg-\[\#031d36\],
-.light .bg-\[\#041c38\],
-.light .bg-\[\#08223e\],
-.light .bg-\[\#031c38\],
-.light .bg-\[\#041d38\],
-.light .bg-\[\#03172e\],
+/* Professional Cards & Containers */
+.light .card, 
+.light .bg-slate-900, 
 .light .bg-gray-900,
-.light .bg-slate-900,
 .light .bg-gray-950,
 .light .bg-slate-950 {
   background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important; /* Slate 200 border */
   color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
-}
-
-/* Semi-transparent dark cards in light mode */
-.light .bg-\[\#031d36\]\/90,
-.light .bg-\[\#031d36\]\/95,
-.light .bg-\[\#021528\]\/95,
-.light .bg-slate-900\/80,
-.light .bg-slate-900\/90,
-.light .bg-gray-900\/90,
-.light .bg-gray-900\/80,
-.light .bg-gray-900\/70,
-.light .bg-gray-950\/80,
-.light .bg-gray-950\/90 {
-  background-color: rgba(255, 255, 255, 0.96) !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-
-/* Inner nested dark sub-boxes */
-.light .bg-\[\#021528\]\/50,
-.light .bg-gray-950\/50,
-.light .bg-gray-950\/60,
-.light .bg-gray-900\/50,
-.light .bg-black\/30,
-.light .bg-black\/40 {
-  background-color: #f0f9ff !important;
-  color: #0f172a !important;
-  border-color: #e2e8f0 !important;
-}
-
-/* Text visibility & legibility fixes for Light Theme */
-.light .text-white,
-.light .text-slate-100,
-.light .text-slate-200,
-.light .text-gray-100,
-.light .text-gray-200 {
-  color: #0f172a !important; /* Maximum contrast dark slate */
-}
-
-.light .text-slate-300,
-.light .text-gray-300 {
-  color: #1e293b !important; /* Slate 800 - clear & readable */
-}
-
-.light .text-slate-400,
-.light .text-gray-400,
-.light .text-slate-500,
-.light .text-gray-500 {
-  color: #334155 !important; /* Slate 700 - sharp subheadings/body */
-}
-
-/* Color accents in light theme - deep vivid tones for AA contrast */
-.light .text-sky-300,
-.light .text-sky-400 {
-  color: #0284c7 !important; /* Vivid Sky 600 */
-}
-
-.light .text-sky-200,
-.light .text-sky-100 {
-  color: #0369a1 !important;
-}
-
-.light .text-indigo-300,
-.light .text-indigo-400 {
-  color: #4f46e5 !important;
-}
-
-.light .text-emerald-300,
-.light .text-emerald-400 {
-  color: #059669 !important;
-}
-
-.light .text-amber-300,
-.light .text-amber-400 {
-  color: #d97706 !important;
-}
-
-.light .text-rose-300,
-.light .text-rose-400 {
-  color: #e11d48 !important;
-}
-
-.light .text-purple-300,
-.light .text-purple-400 {
-  color: #9333ea !important;
-}
-
-.light .text-blue-300,
-.light .text-blue-400 {
-  color: #2563eb !important;
-}
-
-/* Input, Select, and Textarea Legibility in Light Mode */
-.light input,
-.light select,
-.light textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #94a3b8 !important;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-}
-
-.light select option {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-}
-
-.light input::placeholder,
-.light textarea::placeholder {
-  color: #64748b !important;
-}
-
-/* Borders in Light Mode */
-.light .border-sky-900\/40,
-.light .border-sky-800\/40,
-.light .border-sky-900\/50,
-.light .border-indigo-900\/40,
-.light .border-emerald-900\/40,
-.light .border-gray-800,
-.light .border-gray-900,
-.light .border-gray-950,
-.light .border-\[\#082d54\] {
-  border-color: #cbd5e1 !important;
-}
-
-/* Badges & Pills in Light Mode */
-.light .bg-sky-500\/20 {
-  background-color: #e0f2fe !important;
-  color: #0369a1 !important;
-  border-color: #7dd3fc !important;
-}
-
-.light .bg-emerald-500\/20 {
-  background-color: #d1fae5 !important;
-  color: #047857 !important;
-  border-color: #6ee7b7 !important;
-}
-
-.light .bg-amber-500\/20 {
-  background-color: #fef3c7 !important;
-  color: #b45309 !important;
-  border-color: #fcd34d !important;
-}
-
-.light .bg-indigo-500\/20 {
-  background-color: #e0e7ff !important;
-  color: #4338ca !important;
-  border-color: #a5b4fc !important;
-}
-
-.light .bg-rose-500\/20 {
-  background-color: #ffe4e6 !important;
-  color: #be123c !important;
-  border-color: #fca5a5 !important;
-}
-
-.light .bg-purple-500\/20 {
-  background-color: #f3e8ff !important;
-  color: #7e22ce !important;
-  border-color: #d8b4fe !important;
-}
-
-.light .bg-\[\#041c38\] {
-  background-color: #e2e8f0 !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-
-/* Header & Bottom Navigation bar in Light Mode */
-.light header {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-bottom: 1px solid #cbd5e1 !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
 }
 
-.light nav {
+/* Clean up headers/navs */
+.light header, .light nav {
   background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-top: 1px solid #cbd5e1 !important;
-  box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
-/* Modal Backdrops in Light Mode */
-.light .bg-black\/80,
-.light .bg-black\/70,
-.light .bg-gray-950\/80 {
-  background-color: rgba(15, 23, 42, 0.6) !important;
-  backdrop-filter: blur(4px) !important;
+/* High-contrast text specifically for readability without destroying UI */
+.light h1, .light h2, .light h3, .light h4, .light h5, .light h6, 
+.light p, .light span {
+  color: #1e293b !important; /* Slate 800 */
 }
 
 
 
-/* Remove dark gradients in Light Mode */
-.light .bg-gradient-to-r,
-.light .bg-gradient-to-br,
-.light .bg-gradient-to-b,
-.light .bg-gradient-to-tr,
-.light .bg-gradient-to-tl,
-.light .bg-gradient-to-l {
-  background-image: none !important;
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
-  color: #0f172a !important;
-}
 
-/* Opacity text overrides in Light Mode */
-.light .text-white\/90, .light .text-white\/80, .light .text-white\/70, .light .text-white\/60, .light .text-white\/50, .light .text-white\/40 {
-  color: #1e293b !important;
-}
-
-.light .text-gray-300\/90, .light .text-gray-300\/80, .light .text-gray-300\/70, .light .text-gray-300\/60, .light .text-gray-300\/50, .light .text-gray-300\/40,
-.light .text-slate-300\/90, .light .text-slate-300\/80, .light .text-slate-300\/70, .light .text-slate-300\/60, .light .text-slate-300\/50, .light .text-slate-300\/40 {
-  color: #334155 !important;
-}
-
-.light .text-gray-400\/90, .light .text-gray-400\/80, .light .text-gray-400\/70, .light .text-gray-400\/60, .light .text-gray-400\/50, .light .text-gray-400\/40,
-.light .text-slate-400\/90, .light .text-slate-400\/80, .light .text-slate-400\/70, .light .text-slate-400\/60, .light .text-slate-400\/50, .light .text-slate-400\/40 {
-  color: #475569 !important;
-}
-
-/* Background dark opacities */
-.light .bg-gray-900\/60, .light .bg-gray-900\/50, .light .bg-gray-900\/40,
-.light .bg-slate-900\/60, .light .bg-slate-900\/50, .light .bg-slate-900\/40,
-.light .bg-gray-950\/60, .light .bg-gray-950\/50, .light .bg-gray-950\/40,
-.light .bg-slate-950\/60, .light .bg-slate-950\/50, .light .bg-slate-950\/40,
-.light .bg-\[\#031d36\]\/80, .light .bg-\[\#031d36\]\/70, .light .bg-\[\#031d36\]\/60 {
-  background-color: #f0f9ff !important;
-  color: #0f172a !important;
-  border-color: #e2e8f0 !important;
-}
-
-/* Hover states on dark elements for Light Mode */
-.light .hover\:bg-gray-800:hover,
-.light .hover\:bg-slate-800:hover,
-.light .hover\:bg-gray-700:hover,
-.light .hover\:bg-gray-850:hover,
-.light .hover\:bg-gray-900:hover {
-  background-color: #e2e8f0 !important;
-}
-
-/* Override borders specifically */
-.light .border-gray-800,
-.light .border-gray-700,
-.light .border-slate-800,
-.light .border-slate-700,
-.light .border-white\/10,
-.light .border-white\/20 {
-  border-color: #cbd5e1 !important;
-}
-
-/* Dividers in Light Mode */
-.light .divide-gray-800 > :not([hidden]) ~ :not([hidden]),
-.light .divide-gray-700 > :not([hidden]) ~ :not([hidden]),
-.light .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #cbd5e1 !important;
-}
-
-/* Catch-all for dark backgrounds in light mode */
-.light [class*="bg-sky-950"], .light [class*="bg-sky-900"], .light [class*="bg-sky-800"],
-.light [class*="bg-emerald-950"], .light [class*="bg-emerald-900"], .light [class*="bg-emerald-800"],
-.light [class*="bg-amber-950"], .light [class*="bg-amber-900"], .light [class*="bg-amber-800"],
-.light [class*="bg-rose-950"], .light [class*="bg-rose-900"], .light [class*="bg-rose-800"],
-.light [class*="bg-purple-950"], .light [class*="bg-purple-900"], .light [class*="bg-purple-800"],
-.light [class*="bg-indigo-950"], .light [class*="bg-indigo-900"], .light [class*="bg-indigo-800"],
-.light [class*="bg-teal-950"], .light [class*="bg-teal-900"], .light [class*="bg-teal-800"],
-.light [class*="bg-fuchsia-950"], .light [class*="bg-fuchsia-900"], .light [class*="bg-fuchsia-800"],
-.light [class*="bg-gray-950"], .light [class*="bg-gray-900"], .light [class*="bg-gray-800"],
-.light [class*="bg-slate-950"], .light [class*="bg-slate-900"], .light [class*="bg-slate-800"],
-.light [class*="bg-zinc-950"], .light [class*="bg-zinc-900"], .light [class*="bg-zinc-800"],
-.light [class*="bg-neutral-950"], .light [class*="bg-neutral-900"], .light [class*="bg-neutral-800"] {
-  background-color: #f0f9ff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-/* Maintain some tint for specific light background variants */
-.light [class*="bg-emerald-500/10"], .light [class*="bg-emerald-500/20"] { background-color: #d1fae5 !important; }
-.light [class*="bg-sky-500/10"], .light [class*="bg-sky-500/20"] { background-color: #e0f2fe !important; }
-.light [class*="bg-amber-500/10"], .light [class*="bg-amber-500/20"] { background-color: #fef3c7 !important; }
-.light [class*="bg-rose-500/10"], .light [class*="bg-rose-500/20"] { background-color: #ffe4e6 !important; }
-
-/* Catch-all for shadow text in Light Mode (fixes blurred text) */
-.light [class*="shadow-black"], .light [class*="shadow-emerald-950"], .light [class*="shadow-sky-950"], .light [class*="shadow-gray-950"] {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
-}
-
-/* Turn off text shadows in light mode to prevent blurring */
-.light [class*="drop-shadow"] {
-  filter: none !important;
-}
-
-/* Catch-all for dark borders in light mode */
-.light [class*="border-gray-800"], .light [class*="border-gray-900"], .light [class*="border-gray-950"],
-.light [class*="border-slate-800"], .light [class*="border-slate-900"], .light [class*="border-slate-950"],
-.light [class*="border-white/"] {
-  border-color: #cbd5e1 !important;
-}
-
-/* Hex dark backgrounds override */
-.light .bg-\[\#070D1F\], .light .bg-\[\#091124\], .light .bg-\[\#0B132B\], 
-.light .bg-\[\#041c38\], .light .bg-\[\#072a54\] {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}

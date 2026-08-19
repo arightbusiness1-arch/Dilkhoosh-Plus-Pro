@@ -42,7 +42,7 @@ import { HubManagementView } from './components/HubManagementView';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { DataCenterModal } from './components/DataCenterModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
-import { CheckCircle2, Info, Lock, X, ShieldAlert, Eye, EyeOff, Bot, Sparkles } from 'lucide-react';
+import { CheckCircle2, Info, Lock, X, ShieldAlert, Eye, EyeOff, Bot, Sparkles, UserCheck } from 'lucide-react';
 
 export default function App() {
   const [state, setState] = useState<AppState>(() => loadInitialState());
@@ -377,7 +377,7 @@ export default function App() {
 
   // Branch & Role change handlers
 
-  const handleRoleChange = (role: 'admin' | 'manager' | 'staff') => {
+  const handleRoleChange = (role: 'admin' | 'staff') => {
     if (role === 'admin') {
       if (state.role === 'admin') {
         showToast('You are already an Admin 👑');
@@ -392,7 +392,7 @@ export default function App() {
         saveRole(role);
         return next;
       });
-      showToast(`Switched to: ${role === 'manager' ? 'Manager Portal' : 'Staff Portal 🧑‍💼'}`);
+      showToast('Switched to: Staff Portal 🧑‍💼');
     }
   };
 
@@ -1021,13 +1021,10 @@ export default function App() {
               <span className={`text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-lg border uppercase tracking-wide flex items-center gap-1 ${
                 state.role === 'admin' 
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
-                  : state.role === 'manager'
-                    ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
-                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
               }`}>
                 <span>{
                   state.role === 'admin' ? '👑 Admin Panel (ম্যানেজমেন্ট)' : 
-                  state.role === 'manager' ? '💼 Manager Portal (ম্যানেজার)' : 
                   '🧑‍💼 Staff Portal (স্টাফ)'
                 }</span>
               </span>
@@ -1064,17 +1061,6 @@ export default function App() {
                   }`}
                 >
                   <span>👑 Admin</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRoleChange('manager')}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-black flex items-center gap-1 transition-all ${
-                    state.role === 'manager'
-                      ? 'bg-sky-600 text-white shadow-md shadow-sky-950/50'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  <span>💼 Manager</span>
                 </button>
                 <button
                   type="button"
@@ -1249,6 +1235,7 @@ export default function App() {
         onClose={() => setIsNewStaffOpen(false)}
         onAddStaff={handleAddStaff}
         existingStaffList={state.staffList}
+        isBn={state.settings.language === 'bn'}
       />
 
       <ReportsModal
@@ -1506,6 +1493,99 @@ export default function App() {
 
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Forced Staff Selection Overlay */}
+      {state.role === 'staff' && (state.currentUserId === 'admin' || state.currentUserId === '' || !state.staffList.some(s => s.id === state.currentUserId && s.isActive && s.id !== 'admin')) && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#010912]/98 backdrop-blur-md">
+          <div className="w-full max-w-md bg-[#041a30] border-2 border-amber-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/90 space-y-6 text-center animate-in zoom-in duration-300">
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto shadow-inner">
+              <UserCheck className="w-8 h-8" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {state.settings.language === 'bn' ? 'আপনার নাম নির্বাচন করুন' : 'Identify Yourself'}
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
+                {state.settings.language === 'bn' 
+                  ? 'স্টাফ পোর্টাল অ্যাক্সেস করতে ড্রপডাউন থেকে অবশ্যই আপনার নিজের নামটি সিলেক্ট করতে হবে।' 
+                  : 'You must select your own name from the list below to proceed in Staff Portal mode.'}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-950/80 p-3 rounded-2xl border border-gray-850">
+                <label className="block text-[10px] text-sky-400 font-black uppercase tracking-wider text-left mb-1.5 ml-1">
+                  {state.settings.language === 'bn' ? 'স্টাফ মেম্বার সিলেক্ট করুন *' : 'Select Staff Member *'}
+                </label>
+                <select
+                  id="forced-staff-select"
+                  value={state.currentUserId === 'admin' ? '' : state.currentUserId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val) {
+                      handleSelectStaffUser(val);
+                    }
+                  }}
+                  className="w-full bg-transparent text-sm font-bold text-white focus:outline-none cursor-pointer p-1.5 border-none outline-none"
+                >
+                  <option value="" className="bg-gray-900 text-gray-500 font-bold">
+                    {state.settings.language === 'bn' ? '-- এখানে ক্লিক করে আপনার নাম খুঁজুন --' : '-- Click here to select your name --'}
+                  </option>
+                  {state.staffList.filter(s => s.isActive && s.id !== 'admin').map(st => (
+                    <option key={st.id} value={st.id} className="bg-gray-900 text-white font-bold">
+                      {st.name} ({st.department})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {state.staffList.filter(s => s.isActive && s.id !== 'admin').length === 0 && (
+                <p className="text-[11px] text-rose-400 font-bold bg-rose-950/20 p-2.5 rounded-xl border border-rose-500/20">
+                  {state.settings.language === 'bn' 
+                    ? '⚠️ কোনো একটিভ স্টাফ মেম্বার পাওয়া যায়নি! অনুগ্রহ করে এডমিন প্যানেলে ফিরে স্টাফ মেম্বার যোগ করুন।' 
+                    : '⚠️ No active staff members found! Please switch back to Admin to add staff members.'}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2.5 pt-2">
+              <button
+                type="button"
+                id="forced-staff-confirm-btn"
+                onClick={() => {
+                  const selectEl = document.getElementById('forced-staff-select') as HTMLSelectElement | null;
+                  if (selectEl && selectEl.value) {
+                    handleSelectStaffUser(selectEl.value);
+                  } else {
+                    alert(state.settings.language === 'bn' ? 'অনুগ্রহ করে ড্রপডাউন থেকে আপনার নিজের নাম সিলেক্ট করুন!' : 'Please select your name from the dropdown first!');
+                  }
+                }}
+                disabled={state.currentUserId === 'admin' || state.currentUserId === '' || !state.staffList.some(s => s.id === state.currentUserId)}
+                className={`w-full py-3 px-5 rounded-xl font-black text-xs sm:text-sm tracking-wide shadow-lg uppercase transition-all flex items-center justify-center gap-2 ${
+                  state.currentUserId !== 'admin' && state.currentUserId !== '' && state.staffList.some(s => s.id === state.currentUserId)
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/60 active:scale-95 cursor-pointer'
+                    : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                }`}
+              >
+                <CheckCircle2 className="w-4.5 h-4.5" />
+                <span>{state.settings.language === 'bn' ? 'কার্যক্রম শুরু করুন' : 'Confirm & Proceed'}</span>
+              </button>
+
+              <button
+                type="button"
+                id="forced-staff-back-admin-btn"
+                onClick={() => {
+                  handleRoleChange('admin');
+                }}
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-slate-300 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
+              >
+                <span>👑 {state.settings.language === 'bn' ? 'এডমিন প্যানেলে ফিরুন' : 'Back to Admin Panel'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

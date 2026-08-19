@@ -57,7 +57,6 @@ const colorOptions = [
 ];
 
 const departmentSuggestions = ['Management', 'Kitchen', 'Service', 'Accounts', 'Front Desk', 'IT & Support', 'Operations'];
-const roleSuggestions = ['Manager', 'Senior Staff', 'Executive', 'Chef', 'Cashier', 'Receptionist', 'Delivery Officer'];
 
 export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
   isOpen,
@@ -355,30 +354,14 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                   <label className="block text-[10px] font-black text-gray-300 uppercase tracking-wider mb-1">
                     {isBn ? 'পদবি / Role' : 'Role'}
                   </label>
-                  <input
-                    type="text"
-                    value={editRole}
+                  <select
+                    value={editRole === 'System Administrator' ? 'Admin' : editRole}
                     onChange={(e) => setEditRole(e.target.value)}
-                    placeholder="e.g. Manager, Senior Staff"
-                    className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 mb-1.5"
-                  />
-                  {/* Quick Select Buttons */}
-                  <div className="flex flex-wrap gap-1">
-                    {roleSuggestions.map(role => (
-                      <button
-                        key={role}
-                        type="button"
-                        onClick={() => setEditRole(role)}
-                        className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
-                          editRole === role
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400'
-                            : 'bg-gray-950 text-gray-400 border-gray-800 hover:text-white'
-                        }`}
-                      >
-                        {role}
-                      </button>
-                    ))}
-                  </div>
+                    className="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs text-white focus:outline-none focus:border-sky-500 mb-1.5 font-bold"
+                  >
+                    <option value="Staff">{isBn ? 'স্টাফ (Staff)' : 'Staff'}</option>
+                    <option value="Admin">{isBn ? 'এডমিন (Admin)' : 'Admin'}</option>
+                  </select>
                 </div>
 
               {/* Email & Shift */}

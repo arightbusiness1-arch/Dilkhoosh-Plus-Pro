@@ -672,14 +672,14 @@ export const StaffDirectoryView: React.FC<StaffDirectoryViewProps> = ({
                 <label className="block text-xs font-semibold text-gray-300 mb-1">
                   Designation (Role) *
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Sales Executive"
-                  value={editRole}
+                <select
+                  value={editRole === 'System Administrator' ? 'Admin' : editRole}
                   onChange={(e) => setEditRole(e.target.value)}
-                  className="w-full bg-gray-950 text-white text-sm rounded-xl px-3.5 py-2.5 border border-emerald-900/40 focus:outline-none focus:border-sky-400 font-medium"
-                />
+                  className="w-full bg-gray-950 text-white text-sm rounded-xl px-3.5 py-2.5 border border-emerald-900/40 focus:outline-none focus:border-sky-400 font-bold"
+                >
+                  <option value="Staff">{state.settings.language === 'bn' ? 'স্টাফ (Staff)' : 'Staff'}</option>
+                  <option value="Admin">{state.settings.language === 'bn' ? 'এডমিন (Admin)' : 'Admin'}</option>
+                </select>
               </div>
 
               {/* Phone & Joining Date */}

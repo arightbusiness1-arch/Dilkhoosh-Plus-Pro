@@ -24,7 +24,7 @@ import { toBengaliNumber } from '../utils/dateUtils';
 interface AdminDashboardViewProps {
   state: AppState;
   onNavigateTab: (tab: AppTab) => void;
-  onRoleChange: (role: 'admin' | 'manager' | 'staff') => void;
+  onRoleChange: (role: 'admin' | 'staff') => void;
   onOpenNewTask: () => void;
   onOpenNewStaff: () => void;
   onOpenNewDirective: () => void;

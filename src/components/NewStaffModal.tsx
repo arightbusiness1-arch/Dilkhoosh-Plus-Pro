@@ -9,6 +9,7 @@ interface NewStaffModalProps {
   onClose: () => void;
   onAddStaff: (staff: Omit<StaffMember, 'id' | 'isActive'> & { customId?: string }) => void;
   existingStaffList?: StaffMember[];
+  isBn?: boolean;
 }
 
 const colorOptions = [
@@ -26,13 +27,14 @@ export const NewStaffModal: React.FC<NewStaffModalProps> = ({
   isOpen,
   onClose,
   onAddStaff,
-  existingStaffList = []
+  existingStaffList = [],
+  isBn = false
 }) => {
   if (!isOpen) return null;
 
   const [name, setName] = useState('');
   const [customId, setCustomId] = useState('');
-  const [role, setRole] = useState('');
+  const [role, setRole] = useState('Staff');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [shift, setShift] = useState('9:00 AM - 6:00 PM');
@@ -189,14 +191,14 @@ export const NewStaffModal: React.FC<NewStaffModalProps> = ({
               <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Designation (Role) *
               </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Sales Executive"
+              <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-gray-950 text-white text-sm rounded-xl px-3.5 py-2.5 border border-emerald-900/40 focus:outline-none focus:border-sky-400"
-              />
+                className="w-full bg-gray-950 text-white text-sm rounded-xl px-3.5 py-2.5 border border-emerald-900/40 focus:outline-none focus:border-sky-400 font-bold"
+              >
+                <option value="Staff">{isBn ? 'স্টাফ (Staff)' : 'Staff'}</option>
+                <option value="Admin">{isBn ? 'এডমিন (Admin)' : 'Admin'}</option>
+              </select>
             </div>
 
 

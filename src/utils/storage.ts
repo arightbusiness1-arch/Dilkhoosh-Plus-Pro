@@ -185,7 +185,7 @@ export const saveRecycleBin = (data: DeletedItem[]) => {
 };
 
 
-export const saveRole = (role: 'admin' | 'manager' | 'staff') => {
+export const saveRole = (role: 'admin' | 'staff') => {
   try {
     localStorage.setItem(STORAGE_KEYS.ROLE, role);
   } catch (e) {

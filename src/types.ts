@@ -164,7 +164,7 @@ export interface AppState {
   tasks: TaskItem[];
   selectedDate: string;
   currentUserId: string; // Active staff view
-  role: 'admin' | 'manager' | 'staff';
+  role: 'admin' | 'staff';
   settings: AppSettings;
   hubData: HubData;
   recycleBin: DeletedItem[];
