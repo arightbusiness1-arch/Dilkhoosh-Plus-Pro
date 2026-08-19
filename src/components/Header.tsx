@@ -16,6 +16,7 @@ interface HeaderProps {
   onOpenProfile?: () => void;
   onOpenAiAssistant?: () => void;
   onSelectStaffUser?: (staffId: string) => void;
+  onLogout?: () => void;
   cloudStatus?: 'connected' | 'connecting' | 'offline';
 }
 
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenAiAssistant,
   onSelectStaffUser,
+  onLogout,
   cloudStatus = 'connected'
 }) => {
   const todayStr = state.selectedDate;

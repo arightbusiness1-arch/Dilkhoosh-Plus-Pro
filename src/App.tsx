@@ -42,11 +42,15 @@ import { HubManagementView } from './components/HubManagementView';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { DataCenterModal } from './components/DataCenterModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
-import { CheckCircle2, Info, Lock, X, ShieldAlert, Eye, EyeOff, Bot, Sparkles, UserCheck } from 'lucide-react';
+import { LoginView } from './components/LoginView';
+import { CheckCircle2, Info, Lock, X, ShieldAlert, Eye, EyeOff, Bot, Sparkles, UserCheck, RefreshCw, ShieldCheck, Key } from 'lucide-react';
 
 export default function App() {
   const [state, setState] = useState<AppState>(() => loadInitialState());
   const [activeTab, setActiveTab] = useState<AppTab>('home');
+
+  // Login session state (Defaults to Login Page)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   
   // Online/Offline status & Firebase Cloud Storage Sync state
   const [isOnline, setIsOnline] = useState<boolean>(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -342,10 +346,21 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [state, isNewTaskOpen, isNewDirectiveOpen, isNewStaffOpen, isSettingsOpen]);
 
-  // Admin PIN verification state
+  // Helper function to generate a random 5-digit security PIN
+  const generate5DigitPin = () => Math.floor(10000 + Math.random() * 90000).toString();
+
+  // Admin PIN verification state with changing 5-digit PIN
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
+  const [dynamicPin, setDynamicPin] = useState<string>(() => generate5DigitPin());
+
+  // Function to refresh the dynamic 5-digit PIN code
+  const refreshDynamicPin = () => {
+    const newPin = generate5DigitPin();
+    setDynamicPin(newPin);
+    return newPin;
+  };
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -375,6 +390,36 @@ export default function App() {
     });
   };
 
+  // Login & Logout session handlers
+  const handleLoginSuccess = (loginData: { role: 'admin' | 'staff'; staffId?: string }) => {
+    const nextRole = loginData.role;
+    const nextUser = loginData.staffId || (nextRole === 'admin' ? 'admin' : state.currentUserId);
+    
+    setState(prev => {
+      saveRole(nextRole);
+      saveCurrentUser(nextUser);
+      return {
+        ...prev,
+        role: nextRole,
+        currentUserId: nextUser
+      };
+    });
+
+    setIsLoggedIn(true);
+    sessionStorage.setItem('dilkhoosh_is_logged_in', 'true');
+    showToast(
+      state.settings.language === 'bn' 
+        ? `সফলভাবে ${nextRole === 'admin' ? 'এডমিন' : 'স্টাফ'} হিসেবে লগইন করেছেন 🎉` 
+        : `Successfully logged in as ${nextRole === 'admin' ? 'Admin' : 'Staff'} 🎉`
+    );
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    sessionStorage.removeItem('dilkhoosh_is_logged_in');
+    showToast(state.settings.language === 'bn' ? 'সফলভাবে লগআউট করা হয়েছে 👋' : 'Successfully logged out 👋');
+  };
+
   // Branch & Role change handlers
 
   const handleRoleChange = (role: 'admin' | 'staff') => {
@@ -383,6 +428,7 @@ export default function App() {
         showToast('You are already an Admin 👑');
         return;
       }
+      refreshDynamicPin();
       setPinInput('');
       setPinError(false);
       setIsPinModalOpen(true);
@@ -398,8 +444,7 @@ export default function App() {
 
   const handleVerifyPinSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const currentPin = state.settings.adminPin || '300723';
-    if (pinInput === currentPin) {
+    if (pinInput === dynamicPin) {
       setState(prev => {
         const next = { ...prev, role: 'admin' as const };
         saveRole('admin');
@@ -408,25 +453,28 @@ export default function App() {
       setIsPinModalOpen(false);
       setPinInput('');
       setPinError(false);
-      showToast('Welcome Administrator 👑');
+      refreshDynamicPin();
+      showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
     } else {
+      // Auto-change PIN on incorrect attempt!
+      refreshDynamicPin();
+      setPinInput('');
       setPinError(true);
-      showToast('Incorrect PIN Code! 🔒');
+      showToast(state.settings.language === 'bn' ? '❌ ভুল পিন! নতুন পিন জেনারেট হয়েছে।' : '❌ Incorrect PIN! Generated new 5-digit PIN.');
     }
   };
 
   const handleKeypadPress = (val: string) => {
     setPinError(false);
-    const currentPin = state.settings.adminPin || '300723';
     if (val === 'clear') {
       setPinInput('');
     } else if (val === 'backspace') {
       setPinInput(prev => prev.slice(0, -1));
     } else {
-      if (pinInput.length < 6) {
+      if (pinInput.length < 5) {
         const nextInput = pinInput + val;
         setPinInput(nextInput);
-        if (nextInput === currentPin) {
+        if (nextInput === dynamicPin) {
           setState(prev => {
             const next = { ...prev, role: 'admin' as const };
             saveRole('admin');
@@ -435,10 +483,16 @@ export default function App() {
           setIsPinModalOpen(false);
           setPinInput('');
           setPinError(false);
-          showToast('Welcome Administrator 👑');
-        } else if (nextInput.length === 6) {
-          setPinError(true);
-          showToast('Incorrect PIN Code! 🔒');
+          refreshDynamicPin();
+          showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
+        } else if (nextInput.length === 5) {
+          // Auto-change PIN after 5 digits entered incorrectly
+          setTimeout(() => {
+            refreshDynamicPin();
+            setPinInput('');
+            setPinError(true);
+            showToast(state.settings.language === 'bn' ? '❌ পিন মিলেনি! নতুন ৫ ডিজিটের পিন দেওয়া হলো।' : '❌ PIN mismatch! Generated new 5-digit PIN.');
+          }, 150);
         }
       }
     }
@@ -990,6 +1044,15 @@ export default function App() {
     state.staffList.filter(s => s.isActive).length - state.attendanceRecords.filter(r => r.date === state.selectedDate).length
   );
 
+  if (!isLoggedIn) {
+    return (
+      <LoginView
+        state={state}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen flex flex-col selection:bg-sky-500 selection:text-white transition-colors duration-200 ${
       state.settings.theme === 'dark' 
@@ -1008,6 +1071,7 @@ export default function App() {
         onOpenProfile={() => handleOpenStaffProfile(state.currentUserId)}
         onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
         onSelectStaffUser={handleSelectStaffUser}
+        onLogout={handleLogout}
       />
 
       {/* Dynamic Role & Mode Switcher Bar (স্টাফ ও এডমিন প্যানেল সুইচার) - Only displayed when activeTab is 'menu' */}
@@ -1175,6 +1239,7 @@ export default function App() {
             onOpenDataCenter={() => setIsDataCenterOpen(true)}
             onOpenStaffProfile={handleOpenStaffProfile}
             onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
+            onLogout={handleLogout}
           />
         )}
 
@@ -1335,22 +1400,24 @@ export default function App() {
         </div>
       )}
 
-      {/* ================= ADMIN PIN LOCK MODAL ================= */}
+      {/* ================= ADMIN PIN LOCK MODAL WITH DYNAMIC 5-DIGIT PIN ================= */}
       {isPinModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/95 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-amber-500/30 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#031d36] border-2 border-amber-500/40 rounded-3xl w-full max-w-sm shadow-2xl shadow-black/90 overflow-hidden animate-in zoom-in-95 duration-200">
             
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-gray-950">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-800 bg-[#021528]">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
                   <Lock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white">
-                    👑 Admin Panel Lock
+                  <h3 className="text-sm font-black text-white flex items-center gap-1.5">
+                    <span>👑 {state.settings.language === 'bn' ? 'এডমিন অ্যাক্সেস সিকিউরিটি' : 'Admin Security Access'}</span>
                   </h3>
-                  <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Verification Required</p>
+                  <p className="text-[9px] text-amber-400/90 uppercase tracking-widest font-bold">
+                    {state.settings.language === 'bn' ? '৫ ডিজিটের ডাইনামিক পিন সিস্টেম' : '5-Digit Dynamic PIN System'}
+                  </p>
                 </div>
               </div>
               <button
@@ -1360,74 +1427,100 @@ export default function App() {
                   setPinInput('');
                   setPinError(false);
                 }}
-                className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors"
+                className="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-gray-800 transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Body */}
             <div className="p-5 space-y-4 text-center">
-              <p className="text-xs text-gray-300">
-                ম্যানেজমেন্ট ড্যাশবোর্ড বা এডমিন প্যানেলে প্রবেশ করতে অনুগ্রহ করে সঠিক পিন কোডটি লিখুন:
-              </p>
-
-              {/* Professional PIN Reveal Eye Button */}
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gray-950 border border-gray-800 text-left">
-                <span className="text-[11px] text-gray-400 font-medium">
-                  {state.settings.language === 'bn' ? 'এডমিন পিন কোড দেখুন:' : 'View Admin PIN:'}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-black text-amber-400 tracking-wider">
-                    {showPinCode ? (state.settings.adminPin || '300723') : '••••••'}
+              
+              {/* Dynamic 5-Digit PIN Display Card */}
+              <div className="bg-gradient-to-b from-gray-950 via-[#021528] to-gray-950 p-4 rounded-2xl border border-amber-500/40 shadow-inner space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    {state.settings.language === 'bn' ? 'নিরাপত্তা পিন কোড:' : 'Security PIN Code:'}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setShowPinCode(!showPinCode)}
-                    className="p-1.5 rounded-lg bg-gray-900 hover:bg-gray-850 text-sky-400 border border-gray-800 transition-all cursor-pointer flex items-center gap-1 text-[10px] font-bold px-2.5 py-1"
-                    title={showPinCode ? 'Hide PIN' : 'View PIN'}
+                    onClick={() => {
+                      refreshDynamicPin();
+                      setPinInput('');
+                      setPinError(false);
+                      showToast(state.settings.language === 'bn' ? 'নতুন ৫ ডিজিটের পিন জেনারেট হয়েছে 🔄' : 'Generated new 5-digit PIN 🔄');
+                    }}
+                    className="p-1 px-2.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    title="Generate New PIN"
                   >
-                    {showPinCode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    <span>{showPinCode ? 'Hide' : 'View'}</span>
+                    <RefreshCw className="w-3 h-3" />
+                    <span>{state.settings.language === 'bn' ? 'নতুন পিন' : 'Refresh'}</span>
                   </button>
                 </div>
+
+                {/* 5-Digit Display Boxes */}
+                <div className="flex justify-center items-center gap-2 py-1">
+                  {dynamicPin.split('').map((digit, idx) => (
+                    <div 
+                      key={idx}
+                      className="w-10 h-12 bg-amber-500/20 border-2 border-amber-400 rounded-xl flex items-center justify-center text-amber-300 font-mono font-black text-2xl shadow-lg shadow-amber-950/60 transform hover:scale-105 transition-transform"
+                    >
+                      {digit}
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-[11px] text-gray-300 leading-tight font-medium">
+                  {state.settings.language === 'bn' 
+                    ? 'লগইন করতে উপরে প্রদর্শিত এই ৫ ডিজিটের পিন কোডটি টাইপ করুন। প্রতিটি চেষ্টার পর এটি নতুন একটি পিনে পরিবর্তিত হবে।' 
+                    : 'Type this 5-digit PIN code to log in. It automatically changes after every attempt.'}
+                </p>
               </div>
 
-              {/* PIN display boxes */}
-              <div className="flex justify-center gap-2 py-2">
-                {[...Array(6)].map((_, i) => {
-                  const hasValue = pinInput.length > i;
-                  return (
-                    <div
-                      key={i}
-                      className={`w-10 h-12 rounded-xl flex items-center justify-center font-black text-lg border transition-all ${
-                        pinError
-                          ? 'bg-rose-950/30 border-rose-500/50 text-rose-400 animate-pulse'
-                          : hasValue
-                            ? 'bg-amber-500/10 border-amber-500/50 text-amber-400'
-                            : 'bg-gray-950 border-gray-850 text-gray-600'
-                      }`}
-                    >
-                      {hasValue ? '•' : ''}
-                    </div>
-                  );
-                })}
+              {/* User 5-Digit PIN Input Display */}
+              <div className="space-y-1.5">
+                <p className="text-[10px] text-sky-400 font-bold uppercase tracking-wider text-left ml-1">
+                  {state.settings.language === 'bn' ? 'আপনার পিন কোড ইনপুট (৫ ডিজিট):' : 'Type 5-Digit PIN:'}
+                </p>
+                <div className="flex justify-center gap-2">
+                  {[...Array(5)].map((_, i) => {
+                    const hasValue = pinInput.length > i;
+                    const char = hasValue ? pinInput[i] : '';
+                    return (
+                      <div
+                        key={i}
+                        className={`w-11 h-12 rounded-xl flex items-center justify-center font-mono font-black text-xl border-2 transition-all ${
+                          pinError
+                            ? 'bg-rose-950/40 border-rose-500 text-rose-400 animate-bounce'
+                            : hasValue
+                              ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-md shadow-emerald-950/50'
+                              : 'bg-gray-950 border-gray-800 text-gray-600'
+                        }`}
+                      >
+                        {char || '•'}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {pinError && (
-                <div className="text-xs text-rose-400 font-bold bg-rose-500/10 py-1.5 px-3 rounded-lg border border-rose-500/30">
-                  ❌ ভুল পিন কোড! পুনরায় চেষ্টা করুন।
+                <div className="text-xs text-rose-300 font-bold bg-rose-950/60 py-2 px-3 rounded-xl border border-rose-500/50 animate-in fade-in duration-200">
+                  {state.settings.language === 'bn'
+                    ? '❌ পিন কোড মিলেনি! স্বয়ংক্রিয়ভাবে নতুন ৫ ডিজিটের পিন জেনারেট করা হয়েছে।'
+                    : '❌ Incorrect PIN! A new 5-digit PIN has been generated automatically.'}
                 </div>
               )}
 
-              {/* Numeric Pad for Onscreen tapping */}
-              <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto pt-2">
+              {/* Numeric Pad */}
+              <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto pt-1">
                 {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(num => (
                   <button
                     key={num}
                     type="button"
                     onClick={() => handleKeypadPress(num)}
-                    className="h-12 bg-gray-950 hover:bg-gray-800 active:bg-gray-750 text-white font-bold text-sm rounded-xl border border-gray-850 active:scale-95 transition-all"
+                    className="h-11 bg-gray-950 hover:bg-gray-850 active:bg-gray-800 text-white font-bold text-base rounded-xl border border-gray-800 active:scale-95 transition-all shadow-sm"
                   >
                     {num}
                   </button>
@@ -1435,60 +1528,73 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => handleKeypadPress('clear')}
-                  className="h-12 bg-gray-950 hover:bg-rose-950/20 text-rose-400 font-bold text-xs rounded-xl border border-gray-850 active:scale-95 transition-all uppercase"
+                  className="h-11 bg-rose-950/40 hover:bg-rose-900/50 text-rose-400 font-black text-xs rounded-xl border border-rose-800/50 active:scale-95 transition-all uppercase"
                 >
                   Clear
                 </button>
                 <button
                   type="button"
                   onClick={() => handleKeypadPress('0')}
-                  className="h-12 bg-gray-950 hover:bg-gray-800 active:bg-gray-750 text-white font-bold text-sm rounded-xl border border-gray-850 active:scale-95 transition-all"
+                  className="h-11 bg-gray-950 hover:bg-gray-850 active:bg-gray-800 text-white font-bold text-base rounded-xl border border-gray-800 active:scale-95 transition-all shadow-sm"
                 >
                   0
                 </button>
                 <button
                   type="button"
                   onClick={() => handleKeypadPress('backspace')}
-                  className="h-12 bg-gray-950 hover:bg-gray-800 active:bg-gray-750 text-gray-300 font-bold text-xs rounded-xl border border-gray-850 active:scale-95 transition-all"
+                  className="h-11 bg-gray-950 hover:bg-gray-850 active:bg-gray-800 text-gray-300 font-bold text-xs rounded-xl border border-gray-800 active:scale-95 transition-all"
                 >
                   ⌫
                 </button>
               </div>
 
-              {/* Direct Keyboard entry input */}
-              <form onSubmit={handleVerifyPinSubmit} className="pt-2 border-t border-gray-800/60">
+              {/* Direct Keyboard Entry Form */}
+              <form onSubmit={handleVerifyPinSubmit} className="pt-2 border-t border-gray-800/80 space-y-2">
                 <input
                   type="password"
                   pattern="[0-9]*"
                   inputMode="numeric"
-                  maxLength={6}
-                  placeholder="Type PIN here..."
+                  maxLength={5}
+                  placeholder={state.settings.language === 'bn' ? 'এখানে ৫ ডিজিট পিন টাইপ করুন...' : 'Type 5-digit PIN here...'}
                   value={pinInput}
                   onChange={(e) => {
                     const val = e.target.value.replace(/[^0-9]/g, '');
-                    setPinInput(val);
-                    setPinError(false);
-                    const currentPin = state.settings.adminPin || '300723';
-                    if (val === currentPin) {
-                      setState(prev => {
-                        const next = { ...prev, role: 'admin' as const };
-                        saveRole('admin');
-                        return next;
-                      });
-                      setIsPinModalOpen(false);
-                      setPinInput('');
+                    if (val.length <= 5) {
+                      setPinInput(val);
                       setPinError(false);
-                      showToast('Welcome Administrator 👑');
-                    } else if (val.length === 6) {
-                      setPinError(true);
-                      showToast('Incorrect PIN Code! 🔒');
+                      if (val === dynamicPin) {
+                        setState(prev => {
+                          const next = { ...prev, role: 'admin' as const };
+                          saveRole('admin');
+                          return next;
+                        });
+                        setIsPinModalOpen(false);
+                        setPinInput('');
+                        setPinError(false);
+                        refreshDynamicPin();
+                        showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
+                      } else if (val.length === 5) {
+                        setTimeout(() => {
+                          refreshDynamicPin();
+                          setPinInput('');
+                          setPinError(true);
+                          showToast(
+                            state.settings.language === 'bn'
+                              ? '❌ পিন কোড মিলছে না! স্বয়ংক্রিয়ভাবে নতুন পিন জেনারেট করা হয়েছে।'
+                              : '❌ PIN mismatch! Generated new 5-digit PIN.'
+                          );
+                        }, 150);
+                      }
                     }
                   }}
-                  className="w-full text-center bg-gray-950 text-white text-xs py-2 rounded-xl border border-gray-850 focus:outline-none focus:border-amber-400 font-mono"
+                  className="w-full text-center bg-gray-950 text-emerald-400 font-mono font-bold text-sm py-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-amber-400 transition-colors placeholder:text-gray-600 placeholder:font-sans"
                 />
-                <p className="text-[10px] text-gray-400 mt-1">
-                  💡 Keyboard entry is supported for Desktop users.
-                </p>
+                <button
+                  type="submit"
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-950/50 uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>{state.settings.language === 'bn' ? 'লগইন নিশ্চিত করুন' : 'Confirm & Login'}</span>
+                </button>
               </form>
 
             </div>

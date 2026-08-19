@@ -544,100 +544,204 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
 
-              {/* 3b. Admin PIN Code Setup */}
-              <div className="p-3.5 rounded-xl bg-gray-900/60 border border-gray-800 space-y-3">
-                <div className="flex items-center justify-between gap-2">
+              {/* 3b. Admin PIN & Security Recovery Setup */}
+              <div className="p-3.5 rounded-xl bg-gray-900/60 border border-amber-500/30 space-y-3.5">
+                <div className="flex items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
                   <div className="flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <ShieldCheck className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-white">Admin PIN Code</p>
-                      <p className="text-[9px] text-gray-400">
-                        {settings.language === 'bn' ? 'এডমিন প্যানেলে প্রবেশ করার সিকিউরিটি পিন' : 'PIN used to access Admin Panel'}
+                      <p className="text-xs font-black text-white">
+                        {isBn ? 'লগইন সিকিউরিটি ও পিন সেটআপ' : 'Login Security & PIN Setup'}
+                      </p>
+                      <p className="text-[10px] text-gray-400">
+                        {isBn ? 'লগইন পিন টাইপ, কাস্টম পিন ও পিন রিকভারি সেটআপ করুন' : 'Configure PIN mode, custom PIN, and security recovery'}
                       </p>
                     </div>
                   </div>
                   
-                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-gray-950 text-amber-400 border border-gray-850">
-                    {settings.adminPin || '300723'}
+                  <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-gray-950 text-amber-300 border border-amber-500/30">
+                    {settings.loginPinType === 'custom' ? (settings.customAdminPin || settings.adminPin || '300723') : 'Dynamic Auto PIN'}
                   </span>
                 </div>
 
-                <div className="pt-2 border-t border-gray-800/60 flex flex-col gap-1.5">
+                {/* PIN Mode Selection */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-gray-300 flex items-center gap-1">
+                    <Key className="w-3 h-3 text-sky-400" />
+                    <span>{isBn ? 'লগইন পিন মোড নির্বাচন করুন:' : 'Select Login PIN Mode:'}</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-gray-950 rounded-xl border border-gray-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateSettings({ loginPinType: 'dynamic' });
+                        setPinFeedback({
+                          text: isBn ? 'ডায়নামিক অটো পিন মোড সক্রিয় হয়েছে! 🔄' : 'Dynamic Auto PIN mode activated! 🔄',
+                          type: 'success'
+                        });
+                        setTimeout(() => setPinFeedback(null), 3000);
+                      }}
+                      className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        (settings.loginPinType || 'dynamic') === 'dynamic'
+                          ? 'bg-amber-600 text-gray-950 font-black shadow-md'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>{isBn ? 'অটো ডায়নামিক পিন' : 'Dynamic Auto PIN'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateSettings({ loginPinType: 'custom' });
+                        setPinFeedback({
+                          text: isBn ? 'কাস্টম নির্দিষ্ট পিন মোড সক্রিয় হয়েছে! 🔑' : 'Custom Fixed PIN mode activated! 🔑',
+                          type: 'success'
+                        });
+                        setTimeout(() => setPinFeedback(null), 3000);
+                      }}
+                      className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        settings.loginPinType === 'custom'
+                          ? 'bg-sky-600 text-white font-black shadow-md'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <Lock className="w-3 h-3" />
+                      <span>{isBn ? 'কাস্টম নিজস্ব পিন' : 'Custom Fixed PIN'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Custom PIN Field (Active when custom mode selected) */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[11px] font-bold text-gray-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-amber-400" />
+                    <span>{isBn ? 'কাস্টম লগইন পিন সেট করুন (৪-৬ ডিজিট):' : 'Set Custom Login PIN (4-6 digits):'}</span>
+                  </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       pattern="[0-9]*"
                       inputMode="numeric"
                       maxLength={6}
-                      placeholder={settings.language === 'bn' ? "নতুন ৬ ডিজিটের পিন..." : "Enter new 6-digit PIN..."}
-                      id="input-change-admin-pin"
-                      className="flex-1 bg-gray-950 text-white font-mono text-xs rounded-xl px-3 py-2 border border-gray-800 focus:outline-none focus:border-amber-400"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const inputVal = (e.target as HTMLInputElement).value.trim();
-                          if (inputVal.length === 6 && /^\d+$/.test(inputVal)) {
-                            onUpdateSettings({ adminPin: inputVal });
-                            setPinFeedback({
-                              text: settings.language === 'bn' ? 'পিন কোড সফলভাবে পরিবর্তন হয়েছে! ✅' : 'PIN changed successfully! ✅',
-                              type: 'success'
-                            });
-                            setTimeout(() => setPinFeedback(null), 4000);
-                            (e.target as HTMLInputElement).value = '';
-                          } else {
-                            setPinFeedback({
-                              text: settings.language === 'bn' ? 'পিন কোড অবশ্যই ৬ সংখ্যার হতে হবে! ❌' : 'PIN must be exactly 6 digits! ❌',
-                              type: 'error'
-                            });
-                            setTimeout(() => setPinFeedback(null), 4000);
-                          }
-                        }
-                      }}
+                      defaultValue={settings.customAdminPin || settings.adminPin || '300723'}
+                      placeholder={isBn ? "যেমন: 12345" : "e.g. 12345"}
+                      id="input-custom-admin-pin"
+                      className="flex-1 bg-gray-950 text-amber-300 font-mono text-xs rounded-xl px-3 py-2 border border-gray-800 focus:outline-none focus:border-amber-400 font-black tracking-widest"
                     />
                     <button
                       type="button"
                       onClick={() => {
-                        const inputEl = document.getElementById('input-change-admin-pin') as HTMLInputElement;
+                        const inputEl = document.getElementById('input-custom-admin-pin') as HTMLInputElement;
                         if (inputEl) {
                           const inputVal = inputEl.value.trim();
-                          if (inputVal.length === 6 && /^\d+$/.test(inputVal)) {
-                            onUpdateSettings({ adminPin: inputVal });
+                          if (inputVal.length >= 4 && inputVal.length <= 6 && /^\d+$/.test(inputVal)) {
+                            onUpdateSettings({ customAdminPin: inputVal, adminPin: inputVal });
                             setPinFeedback({
-                              text: settings.language === 'bn' ? 'পিন কোড সফলভাবে পরিবর্তন হয়েছে! ✅' : 'PIN changed successfully! ✅',
+                              text: isBn ? `কাস্টম পিন (${inputVal}) সফলভাবে সেট হয়েছে! ✅` : `Custom PIN (${inputVal}) set successfully! ✅`,
                               type: 'success'
                             });
-                            setTimeout(() => setPinFeedback(null), 4000);
-                            inputEl.value = '';
+                            setTimeout(() => setPinFeedback(null), 3500);
                           } else {
                             setPinFeedback({
-                              text: settings.language === 'bn' ? 'পিন কোড অবশ্যই ৬ সংখ্যার হতে হবে! ❌' : 'PIN must be exactly 6 digits! ❌',
+                              text: isBn ? 'পিন কোড ৪ থেকে ৬ ডিজিটের সংখ্যা হতে হবে! ❌' : 'PIN must be 4 to 6 digits long! ❌',
                               type: 'error'
                             });
-                            setTimeout(() => setPinFeedback(null), 4000);
+                            setTimeout(() => setPinFeedback(null), 3500);
                           }
                         }
                       }}
-                      className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-gray-950 text-xs font-black rounded-xl transition-all"
+                      className="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-gray-950 text-xs font-black rounded-xl transition-all shadow-md shrink-0 cursor-pointer"
                     >
-                      {settings.language === 'bn' ? "পরিবর্তন করুন" : "Update PIN"}
+                      {isBn ? "সেভ পিন" : "Save PIN"}
                     </button>
                   </div>
-
-                  {pinFeedback && (
-                    <div className={`text-xs font-semibold py-2 px-3 rounded-xl border animate-in fade-in slide-in-from-top-1 duration-150 ${
-                      pinFeedback.type === 'success' 
-                        ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400' 
-                        : 'bg-rose-950/40 border-rose-500/30 text-rose-400'
-                    }`}>
-                      {pinFeedback.text}
-                    </div>
-                  )}
-
-                  <p className="text-[10px] text-amber-500/80 font-medium">
-                    {settings.language === 'bn' ? '💡 নতুন পিন কোডটি অবশ্যই ৬টি সংখ্যার হতে হবে।' : '💡 The new PIN code must be exactly 6 digits long.'}
-                  </p>
                 </div>
+
+                {/* Security Recovery Options (সিকিউরিটি প্রশ্ন ও উত্তর সেটআপ) */}
+                <div className="p-2.5 rounded-xl bg-gray-950 border border-gray-800 space-y-2.5">
+                  <div className="flex items-center gap-2 text-sky-300 font-bold text-[11px]">
+                    <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />
+                    <span>{isBn ? 'পিন ভুলে গেলে রিকভারি সেটআপ (Security Recovery)' : 'Forgot PIN Recovery Setup'}</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-gray-400 font-semibold">{isBn ? 'রিকভারি সিকিউরিটি প্রশ্ন:' : 'Security Recovery Question:'}</label>
+                    <input
+                      type="text"
+                      defaultValue={settings.securityQuestion || 'আপনার প্রিয় সিকিউরিটি শব্দ কী?'}
+                      placeholder={isBn ? "যেমন: আপনার প্রথম স্কুলের নাম কী?" : "e.g. Favorite Security Word"}
+                      id="input-security-question"
+                      className="w-full bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 border border-gray-800 focus:outline-none focus:border-sky-400"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-gray-400 font-semibold">{isBn ? 'সিকিউরিটি উত্তর (Answer):' : 'Security Answer:'}</label>
+                      <input
+                        type="text"
+                        defaultValue={settings.securityAnswer || 'dilkhoosh'}
+                        placeholder={isBn ? "যেমন: dilkhoosh" : "e.g. dilkhoosh"}
+                        id="input-security-answer"
+                        className="w-full bg-gray-900 text-emerald-300 text-xs rounded-lg px-2.5 py-1.5 border border-gray-800 focus:outline-none focus:border-emerald-400 font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-gray-400 font-semibold">{isBn ? 'মাস্টার রিকভারি কোড (Key):' : 'Master Emergency Key:'}</label>
+                      <input
+                        type="text"
+                        defaultValue={settings.masterRecoveryKey || '778899'}
+                        placeholder="e.g. 778899"
+                        id="input-master-key"
+                        className="w-full bg-gray-900 text-sky-300 text-xs rounded-lg px-2.5 py-1.5 border border-gray-800 focus:outline-none focus:border-sky-400 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const qEl = document.getElementById('input-security-question') as HTMLInputElement;
+                      const aEl = document.getElementById('input-security-answer') as HTMLInputElement;
+                      const kEl = document.getElementById('input-master-key') as HTMLInputElement;
+                      
+                      const newQ = qEl?.value.trim() || 'আপনার প্রিয় সিকিউরিটি শব্দ কী?';
+                      const newA = aEl?.value.trim() || 'dilkhoosh';
+                      const newK = kEl?.value.trim() || '778899';
+
+                      onUpdateSettings({
+                        securityQuestion: newQ,
+                        securityAnswer: newA,
+                        masterRecoveryKey: newK
+                      });
+
+                      setPinFeedback({
+                        text: isBn ? 'রিকভারি সিকিউরিটি সফলভাবে আপডেট হয়েছে! 🛡️' : 'Recovery security updated successfully! 🛡️',
+                        type: 'success'
+                      });
+                      setTimeout(() => setPinFeedback(null), 3500);
+                    }}
+                    className="w-full py-1.5 bg-sky-700 hover:bg-sky-600 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>{isBn ? 'রিকভারি সিকিউরিটি সেভ করুন' : 'Save Recovery Security'}</span>
+                  </button>
+                </div>
+
+                {pinFeedback && (
+                  <div className={`text-xs font-semibold py-2 px-3 rounded-xl border animate-in fade-in slide-in-from-top-1 duration-150 ${
+                    pinFeedback.type === 'success' 
+                      ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' 
+                      : 'bg-rose-950/60 border-rose-500/40 text-rose-300'
+                  }`}>
+                    {pinFeedback.text}
+                  </div>
+                )}
               </div>
 
               {/* 3c. Staff Access & Permissions Matrix */}

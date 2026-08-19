@@ -14,7 +14,8 @@ import {
   Layers,
   Trash2,
   Bot,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 import { AppState, AppTab, AppSettings } from '../types';
 import { toBengaliNumber } from '../utils/dateUtils';
@@ -33,6 +34,7 @@ interface MenuViewProps {
   onOpenDataCenter?: () => void;
   onOpenStaffProfile?: (staffId: string) => void;
   onOpenAiAssistant?: () => void;
+  onLogout?: () => void;
 }
 
 export const MenuView: React.FC<MenuViewProps> = ({
@@ -47,7 +49,8 @@ export const MenuView: React.FC<MenuViewProps> = ({
   onOpenRecycleBin,
   onOpenDataCenter,
   onOpenStaffProfile,
-  onOpenAiAssistant
+  onOpenAiAssistant,
+  onLogout
 }) => {
   const [isStaffHubOpen, setIsStaffHubOpen] = useState(false);
   const activeStaffCount = state.staffList.filter(s => s.isActive).length;
@@ -489,37 +492,64 @@ export const MenuView: React.FC<MenuViewProps> = ({
         </div>
       </div>
 
-      {/* Bottom Action Grid: Settings & Preferences Option */}
+      {/* Bottom Action Grid: Settings & Logout Options */}
       <div className="space-y-2 pt-1">
         {/* Pinned Settings Option at Bottom */}
-        <div className="sticky bottom-2 z-20">
-          <div className="absolute -top-2 right-4 px-1.5 py-0.5 bg-sky-600 text-white text-[7px] font-black uppercase tracking-wider rounded-full shadow border border-sky-400 whitespace-nowrap">
-            {isBn ? 'পিনড সেটিংস' : 'Pinned'}
-          </div>
-          <button
-            type="button"
-            id="btn-menu-open-settings"
-            onClick={() => onOpenSettings('settings')}
-            className="w-full p-2.5 rounded-xl bg-gray-900/95 hover:bg-gray-900 border border-sky-500/50 hover:border-sky-400 text-left flex items-center justify-between transition-all group shadow-lg backdrop-blur-md min-w-0"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="p-2 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-400/30 group-hover:scale-105 transition-transform shrink-0">
-                <Settings className="w-4 h-4 text-sky-450 animate-spin-slow" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-xs font-black text-white group-hover:text-sky-300 transition-colors flex items-center gap-1.5 truncate">
-                  <span>{isBn ? 'সেটিংস ও প্রেফারেন্স' : 'Settings & Preferences'}</span>
-                  <span className="text-[8px] px-1 py-0.2 rounded bg-sky-500/10 text-sky-300 border border-sky-400/20 font-bold shrink-0">
-                    {isBn ? 'কুইক' : 'Quick'}
-                  </span>
-                </h4>
-                <p className="text-[10px] text-gray-350 truncate">
-                  {isBn ? 'থিম, ভাষা, নোটিফিকেশন ও সিস্টেম সেটআপ' : 'Manage theme, language, alerts & system setup'}
-                </p>
-              </div>
+        <div className="sticky bottom-2 z-20 space-y-2">
+          <div className="relative">
+            <div className="absolute -top-2 right-4 px-1.5 py-0.5 bg-sky-600 text-white text-[7px] font-black uppercase tracking-wider rounded-full shadow border border-sky-400 whitespace-nowrap z-10">
+              {isBn ? 'পিনড সেটিংস' : 'Pinned'}
             </div>
-            <ChevronRight className="w-4 h-4 text-sky-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
-          </button>
+            <button
+              type="button"
+              id="btn-menu-open-settings"
+              onClick={() => onOpenSettings('settings')}
+              className="w-full p-2.5 rounded-xl bg-gray-900/95 hover:bg-gray-900 border border-sky-500/50 hover:border-sky-400 text-left flex items-center justify-between transition-all group shadow-lg backdrop-blur-md min-w-0 cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-400/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Settings className="w-4 h-4 text-sky-450 animate-spin-slow" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-black text-white group-hover:text-sky-300 transition-colors flex items-center gap-1.5 truncate">
+                    <span>{isBn ? 'সেটিংস ও প্রেফারেন্স' : 'Settings & Preferences'}</span>
+                    <span className="text-[8px] px-1 py-0.2 rounded bg-sky-500/10 text-sky-300 border border-sky-400/20 font-bold shrink-0">
+                      {isBn ? 'কুইক' : 'Quick'}
+                    </span>
+                  </h4>
+                  <p className="text-[10px] text-gray-350 truncate">
+                    {isBn ? 'থিম, ভাষা, নোটিফিকেশন ও সিস্টেম সেটআপ' : 'Manage theme, language, alerts & system setup'}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-sky-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </button>
+          </div>
+
+          {/* Logout Button */}
+          {onLogout && (
+            <button
+              type="button"
+              id="btn-menu-logout"
+              onClick={onLogout}
+              className="w-full p-2.5 rounded-xl bg-rose-950/70 hover:bg-rose-900/90 border border-rose-500/50 hover:border-rose-400 text-left flex items-center justify-between transition-all group shadow-lg backdrop-blur-md min-w-0 cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-400/30 group-hover:scale-105 transition-transform shrink-0">
+                  <LogOut className="w-4 h-4 text-rose-400" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition-colors flex items-center gap-1.5 truncate">
+                    <span>{isBn ? 'অ্যাপ থেকে লগআউট করুন' : 'Logout from Application'}</span>
+                  </h4>
+                  <p className="text-[10px] text-rose-300/80 truncate">
+                    {isBn ? 'লগইন পেজে ফিরে যান ও অ্যাকাউন্ট লক করুন' : 'Lock account and return to Login page'}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-rose-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </button>
+          )}
         </div>
 
         {/* Simple Developer Credit directly below Settings */}

@@ -92,6 +92,11 @@ export interface AppSettings {
   version: string;
   developerCredit: string;
   adminPin?: string;
+  loginPinType?: 'dynamic' | 'custom';
+  customAdminPin?: string;
+  securityQuestion?: string;
+  securityAnswer?: string;
+  masterRecoveryKey?: string;
   staffCanSubmitAttendance?: boolean;
   staffCanChangeTaskStatus?: boolean;
   staffCanAddDirectives?: boolean;
