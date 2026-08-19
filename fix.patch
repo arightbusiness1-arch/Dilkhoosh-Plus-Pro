@@ -1,0 +1,13 @@
+--- src/components/StaffDirectoryView.tsx
++++ src/components/StaffDirectoryView.tsx
+@@ -197,8 +197,8 @@
+                     </div>
+ 
+                     <div className="flex items-center justify-between">
+                       <span className="text-gray-400 flex items-center gap-1">
+                         <Calendar className="w-3.5 h-3.5 text-emerald-400" />
++                        <span>Joined {formatEnglishDate(staff.joiningDate)}</span>
++                      </span>
+                     </div>
+                   </div>
+                 </div>

@@ -1,0 +1,6 @@
+{
+  "name": "Dilkhoosh Plus",
+  "description": "আধুনিক, মিনিমালিস্টিক স্টাফ হাজিরা, কাজের নির্দেশনা ও ডেইলি টাস্ক ম্যানেজমেন্ট প্ল্যাটফর্ম",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

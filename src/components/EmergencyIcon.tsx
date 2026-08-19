@@ -1,0 +1,59 @@
+import React, { useState } from 'react';
+
+interface EmergencyIconProps {
+  className?: string;
+  size?: number | string;
+  alt?: string;
+}
+
+export const EmergencyIcon: React.FC<EmergencyIconProps> = ({
+  className = 'w-6 h-6',
+  size,
+  alt = 'Emergency Alert Icon'
+}) => {
+  const [hasError, setHasError] = useState(false);
+
+  const styleProps: React.CSSProperties = size
+    ? { width: typeof size === 'number' ? `${size}px` : size, height: typeof size === 'number' ? `${size}px` : size }
+    : {};
+
+  if (hasError) {
+    return (
+      <svg 
+        viewBox="0 0 512 512" 
+        className={`inline-block shrink-0 ${className}`}
+        style={styleProps}
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path 
+          d="M 256 32 C 272 32, 286 42, 294 56 L 490 408 C 498 422, 498 440, 490 454 C 482 468, 468 476, 452 476 L 60 476 C 44 476, 30 468, 22 454 C 14 440, 14 422, 22 408 L 218 56 C 226 42, 240 32, 256 32 Z" 
+          fill="#E60028"
+        />
+        <path 
+          d="M 256 68 C 266 68, 274 74, 280 84 L 462 408 C 468 418, 468 430, 462 440 C 456 450, 446 456, 434 456 L 78 456 C 66 456, 56 450, 50 440 C 44 430, 44 418, 50 408 L 232 84 C 238 74, 246 68, 256 68 Z" 
+          fill="#E60028" 
+          stroke="#FFFFFF" 
+          strokeWidth="18" 
+          strokeLinejoin="round"
+        />
+        <path 
+          d="M 234 165 C 234 150, 244 138, 256 138 C 268 138, 278 150, 278 165 L 272 315 C 272 325, 264 333, 256 333 C 248 333, 240 325, 240 315 Z" 
+          fill="#FFFFFF"
+        />
+        <circle cx="256" cy="382" r="23" fill="#FFFFFF" />
+      </svg>
+    );
+  }
+
+  return (
+    <img
+      src="/emergency-icon.png"
+      alt={alt}
+      className={`inline-block object-contain shrink-0 ${className}`}
+      style={styleProps}
+      onError={() => setHasError(true)}
+      referrerPolicy="no-referrer"
+    />
+  );
+};

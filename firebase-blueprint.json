@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "staff": {
+      "title": "Staff Member",
+      "description": "Information about an employee or admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "nameEn": { "type": "string" },
+        "role": { "type": "string" },
+        "department": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "avatarColor": { "type": "string" },
+        "shift": { "type": "string" },
+        "joiningDate": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "name", "role", "department", "isActive"]
+    },
+    "attendance": {
+      "title": "Attendance Record",
+      "description": "Daily attendance record for a staff member",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "staffId": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["present", "late", "absent", "leave", "half_day"] },
+        "checkInTime": { "type": "string" },
+        "checkOutTime": { "type": "string" },
+        "note": { "type": "string" },
+        "markedAt": { "type": "string" }
+      },
+      "required": ["id", "staffId", "date", "status", "markedAt"]
+    },
+    "directive": {
+      "title": "Directive",
+      "description": "Official notice, order, or directive posted by admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "priority": { "type": "string", "enum": ["urgent", "high", "medium", "normal", "low"] },
+        "category": { "type": "string" },
+        "targetDepartment": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "isPinned": { "type": "boolean" },
+        "acknowledgedStaffIds": { "type": "array" }
+      },
+      "required": ["id", "title", "content", "priority", "createdBy", "createdAt"]
+    },
+    "task": {
+      "title": "Task Item",
+      "description": "Operational task assigned to staff or department",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "assignedStaffId": { "type": "string" },
+        "targetDepartment": { "type": "string" },
+        "priority": { "type": "string", "enum": ["urgent", "high", "medium", "normal", "low"] },
+        "status": { "type": "string", "enum": ["pending", "progress", "attempting", "partial", "complete", "failed"] },
+        "dueTime": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "priority", "status", "createdAt"]
+    },
+    "hubData": {
+      "title": "Hub Data",
+      "description": "Central hub instructions, reminders, emergency contacts, and ideas",
+      "type": "object",
+      "properties": {
+        "instructions": { "type": "array" },
+        "reminders": { "type": "array" },
+        "emergencies": { "type": "array" },
+        "ideas": { "type": "array" }
+      }
+    },
+    "settings": {
+      "title": "App Settings",
+      "description": "Global application configuration and permissions",
+      "type": "object",
+      "properties": {
+        "theme": { "type": "string" },
+        "language": { "type": "string" },
+        "notificationMode": { "type": "string" },
+        "version": { "type": "string" },
+        "developerCredit": { "type": "string" },
+        "adminPin": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/staff/{staffId}": {
+      "schema": "#/entities/staff",
+      "description": "Staff member profiles and credentials"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "#/entities/attendance",
+      "description": "Daily attendance logs and check-in times"
+    },
+    "/directives/{directiveId}": {
+      "schema": "#/entities/directive",
+      "description": "Official directives and notices"
+    },
+    "/tasks/{taskId}": {
+      "schema": "#/entities/task",
+      "description": "Task items and operational assignments"
+    },
+    "/hub/data": {
+      "schema": "#/entities/hubData",
+      "description": "Central instructions, reminders, and emergencies"
+    },
+    "/config/settings": {
+      "schema": "#/entities/settings",
+      "description": "App settings configuration"
+    }
+  }
+}
