@@ -4,7 +4,7 @@
   "description": "দিলখুশ প্লাস: স্টাফদের উপস্থিতি, কাজের নির্দেশনা এবং দৈনিক টাস্ক ম্যানেজমেন্টের আধুনিক ও সহজ সিস্টেম।",
   "icons": [
     {
-      "src": "/emergency-icon.png",
+      "src": "/logo.png",
       "type": "image/png",
       "sizes": "192x192 512x512",
       "purpose": "any maskable"

@@ -17,7 +17,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { AppState, AppTab, StaffMember } from '../types';
-import { formatEnglishDate, toBengaliNumber, getDayNameEnglish } from '../utils/dateUtils';
+import { formatEnglishDate, toBengaliNumber, getDayNameEnglish, parseTimeStrToMinutes } from '../utils/dateUtils';
 import { exportAllDataJSON } from '../utils/storage';
 import { ViewBackButton } from './ViewBackButton';
 
@@ -40,8 +40,129 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   const [restoreText, setRestoreText] = useState('');
   const [showRestoreBox, setShowRestoreBox] = useState(false);
   const [selectedPerfStaff, setSelectedPerfStaff] = useState<StaffMember | null>(null);
+  const [showMonthlyView, setShowMonthlyView] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>(state.selectedDate.substring(0, 7)); // 'YYYY-MM'
 
   const today = state.selectedDate;
+
+  // Print / Export PDF function for Staff Performance
+  const handlePrintMonthlySummaryPDF = () => {
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) {
+      alert('Please allow popups in your browser to download/print PDF reports!');
+      return;
+    }
+
+    const monthName = new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const rowsHtml = activeStaff.map((st, index) => {
+      // Tasks for this month
+      const staffTasks = state.tasks.filter(t => 
+        (t.assignedStaffId === st.id || t.assignedStaffId2 === st.id) && 
+        (t.dueDate || '').startsWith(selectedMonth)
+      );
+      const completedTasks = staffTasks.filter(t => t.status === 'complete').length;
+
+      // Attendance for this month
+      const staffAtt = state.attendanceRecords.filter(r => r.staffId === st.id && r.date.startsWith(selectedMonth));
+      const presentDays = staffAtt.filter(r => r.status === 'present').length;
+      const lateDays = staffAtt.filter(r => r.status === 'late').length;
+      const totalAttended = presentDays + lateDays;
+      const totalAttRecords = staffAtt.length;
+      const attendancePercentage = totalAttRecords > 0 ? Math.round((totalAttended / totalAttRecords) * 100) : 0;
+
+      // Hours worked
+      let totalMinutes = 0;
+      staffAtt.forEach(r => {
+        if (r.checkInTime && r.checkOutTime) {
+          const inMins = parseTimeStrToMinutes(r.checkInTime);
+          const outMins = parseTimeStrToMinutes(r.checkOutTime);
+          if (outMins > inMins) {
+            totalMinutes += (outMins - inMins);
+          }
+        }
+      });
+      const totalHours = (totalMinutes / 60).toFixed(1);
+
+      return `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; font-size: 13px;">${index + 1}. ${st.name}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569;">${st.role}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: bold;">${completedTasks} / ${staffTasks.length}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: bold; color: #0284c7;">${totalAttended} / ${totalAttRecords} Days</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: bold; color: #16a34a;">${attendancePercentage}%</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: bold; color: #9333ea;">${totalHours} hrs</td>
+        </tr>
+      `;
+    }).join('');
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Dilkhoosh Plus - Monthly Summary - ${monthName}</title>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; margin: 25px; color: #0f172a; background: #ffffff; }
+            .header { text-align: center; padding-bottom: 15px; border-bottom: 3px solid #0284c7; margin-bottom: 20px; }
+            .header h1 { margin: 0; font-size: 24px; color: #0369a1; }
+            .header p { margin: 5px 0 0; font-size: 13px; color: #64748b; font-weight: 500; }
+            .badge { display: inline-block; padding: 5px 12px; background: #e0f2fe; color: #0369a1; border-radius: 6px; font-weight: bold; font-size: 12px; margin-top: 10px; border: 1px solid #bae6fd; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { background: #0f172a; color: white; padding: 10px; font-size: 12px; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; }
+            th.center, td.center { text-align: center; }
+            .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+            .print-btn-bar { margin-bottom: 20px; text-align: right; }
+            .print-btn { padding: 10px 20px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            @media print {
+              body { margin: 10mm; }
+              .print-btn-bar { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-btn-bar">
+            <button class="print-btn" onclick="window.print()">🖨️ Save as PDF / Print Sheet</button>
+          </div>
+          <div class="header">
+            <h1>Dilkhoosh Plus Pro</h1>
+            <p>Monthly Staff Summary Report (মাসিক রিপোর্ট)</p>
+            <div class="badge">Month: ${monthName} • Generated Time: ${new Date().toLocaleTimeString()}</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Staff Member</th>
+                <th>Designation</th>
+                <th class="center">Completed Tasks</th>
+                <th class="center">Days Attended</th>
+                <th class="center">Attendance Rate</th>
+                <th class="center">Total Hours Worked</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            Dilkhoosh Plus Pro Management System • Monthly Summary PDF
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 400);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
 
   // Print / Export PDF function for Staff Performance
   const handlePrintPerformancePDF = (targetStaff?: StaffMember | null) => {
@@ -495,6 +616,48 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             CSV
           </span>
         </button>
+      </div>
+
+      {/* Monthly Summary PDF Generator */}
+      <div className="bg-gray-900 border border-fuchsia-900/50 rounded-xl p-3.5 sm:p-4 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30">
+            <FileText className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+              Monthly Summary Report
+            </h3>
+            <p className="text-[11px] text-gray-400">
+              Generate a PDF summary of total hours, attendance & tasks for a selected month
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <input 
+            type="month" 
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="bg-gray-950 text-white text-xs rounded-lg px-2 py-1.5 border border-gray-800 focus:outline-none focus:border-fuchsia-400 font-mono"
+          />
+          <button
+            type="button"
+            onClick={() => setShowMonthlyView(true)}
+            className="px-3 py-1.5 rounded-lg bg-sky-900/50 hover:bg-sky-800/80 text-sky-200 border border-sky-500/40 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+          >
+            <Eye className="w-3.5 h-3.5 text-sky-300" />
+            <span>View</span>
+          </button>
+          <button
+            type="button"
+            onClick={handlePrintMonthlySummaryPDF}
+            className="px-3 py-1.5 rounded-lg bg-fuchsia-900/50 hover:bg-fuchsia-800/80 text-fuchsia-200 border border-fuchsia-500/40 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+          >
+            <Printer className="w-3.5 h-3.5 text-fuchsia-300" />
+            <span>Generate PDF</span>
+          </button>
+        </div>
       </div>
 
       {/* Individual Staff Performance Metrics Section */}
@@ -978,6 +1141,130 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </button>
               </div>
 
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Monthly Summary View Modal */}
+      {showMonthlyView && (() => {
+        const monthName = new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-gray-900 border border-fuchsia-500/40 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 space-y-4 p-4 sm:p-5">
+              
+              <div className="flex items-start justify-between gap-3 border-b border-gray-800 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-fuchsia-500/20 flex items-center justify-center border border-fuchsia-500/40 shrink-0">
+                    <FileText className="w-5 h-5 text-fuchsia-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                      Monthly Summary: {monthName}
+                    </h2>
+                    <p className="text-xs text-gray-400">Total Hours, Attendance & Completed Tasks</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowMonthlyView(false)}
+                  className="p-2 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="overflow-x-auto no-scrollbar max-h-[60vh] border border-gray-800 rounded-xl bg-gray-950">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead className="bg-gray-900 border-b border-gray-800 text-gray-400 uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="p-3 font-bold">Staff Member</th>
+                      <th className="p-3 font-bold text-center">Completed Tasks</th>
+                      <th className="p-3 font-bold text-center">Days Attended</th>
+                      <th className="p-3 font-bold text-center">Attendance Rate</th>
+                      <th className="p-3 font-bold text-center">Total Hours Worked</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-300">
+                    {activeStaff.map(st => {
+                      // Tasks for this month
+                      const staffTasks = state.tasks.filter(t => 
+                        (t.assignedStaffId === st.id || t.assignedStaffId2 === st.id) && 
+                        (t.dueDate || '').startsWith(selectedMonth)
+                      );
+                      const completedTasks = staffTasks.filter(t => t.status === 'complete').length;
+
+                      // Attendance for this month
+                      const staffAtt = state.attendanceRecords.filter(r => r.staffId === st.id && r.date.startsWith(selectedMonth));
+                      const presentDays = staffAtt.filter(r => r.status === 'present').length;
+                      const lateDays = staffAtt.filter(r => r.status === 'late').length;
+                      const totalAttended = presentDays + lateDays;
+                      const totalAttRecords = staffAtt.length;
+                      const attendancePercentage = totalAttRecords > 0 ? Math.round((totalAttended / totalAttRecords) * 100) : 0;
+
+                      // Hours worked
+                      let totalMinutes = 0;
+                      staffAtt.forEach(r => {
+                        if (r.checkInTime && r.checkOutTime) {
+                          const inMins = parseTimeStrToMinutes(r.checkInTime);
+                          const outMins = parseTimeStrToMinutes(r.checkOutTime);
+                          if (outMins > inMins) {
+                            totalMinutes += (outMins - inMins);
+                          }
+                        }
+                      });
+                      const totalHours = (totalMinutes / 60).toFixed(1);
+
+                      return (
+                        <tr key={st.id} className="hover:bg-gray-900/50 transition-colors">
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-white font-bold shrink-0 ${st.avatarColor || 'bg-emerald-600'}`}>
+                                {st.name.slice(0, 1)}
+                              </div>
+                              <div>
+                                <p className="font-bold text-white text-xs">{st.name}</p>
+                                <p className="text-[10px] text-gray-500">{st.role}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-3 text-center font-bold text-sky-400">
+                            {completedTasks} / {staffTasks.length}
+                          </td>
+                          <td className="p-3 text-center font-bold text-fuchsia-400">
+                            {totalAttended} / {totalAttRecords}
+                          </td>
+                          <td className="p-3 text-center font-bold text-emerald-400">
+                            {attendancePercentage}%
+                          </td>
+                          <td className="p-3 text-center font-bold text-amber-400">
+                            {totalHours} hrs
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
+                <button
+                  type="button"
+                  onClick={handlePrintMonthlySummaryPDF}
+                  className="px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-white" />
+                  <span>Download / Print PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowMonthlyView(false)}
+                  className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         );

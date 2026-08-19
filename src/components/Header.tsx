@@ -60,8 +60,14 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-2 sm:gap-3 min-w-0 text-left cursor-pointer group hover:opacity-90 active:scale-95 transition-all outline-none"
             title="Go to Home Dashboard"
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-700 flex items-center justify-center shadow-md shadow-emerald-950/80 text-white font-black text-sm sm:text-lg shrink-0 border border-emerald-500/40 ring-1 ring-sky-400/40 group-hover:bg-emerald-600 transition-colors">
-              D+
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-700 flex items-center justify-center shadow-md shadow-emerald-950/80 text-white font-black text-sm sm:text-lg shrink-0 border border-emerald-500/40 ring-1 ring-sky-400/40 group-hover:bg-emerald-600 transition-colors overflow-hidden relative">
+              <img 
+                src="/logo.png" 
+                alt="Dilkhoosh Plus" 
+                className="absolute inset-0 w-full h-full object-cover z-10 bg-white" 
+                onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+              />
+              <span className="z-0">D+</span>
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
