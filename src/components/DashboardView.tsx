@@ -24,6 +24,7 @@ import {
 import { AppState, StaffMember, AttendanceStatus, TaskItem, Directive } from '../types';
 import { toBengaliNumber, getCurrentTimeString, formatEnglishDate, getDayNameEnglish, parseTimeStrToMinutes } from '../utils/dateUtils';
 import { MotivationalQuoteBanner } from './MotivationalQuoteBanner';
+import { AttendanceConfirmModal } from './AttendanceConfirmModal';
 
 interface DashboardViewProps {
   state: AppState;
@@ -47,8 +48,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [quickStaffId, setQuickStaffId] = useState<string>(state.staffList[0]?.id || '');
   const [copiedNotification, setCopiedNotification] = useState<boolean>(false);
   const [doubleClickConfirmed, setDoubleClickConfirmed] = useState<'checkin' | 'checkout' | null>(null);
-  const [clickHint, setClickHint] = useState<'checkin' | 'checkout' | null>(null);
-  const [lastClickTimestamp, setLastClickTimestamp] = useState<number>(0);
+  
+  // Attendance Confirmation Modal State
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
+  const [confirmActionType, setConfirmActionType] = useState<'checkin' | 'checkout'>('checkin');
+
   const [isOverviewCollapsed, setIsOverviewCollapsed] = useState<boolean>(false);
   const [isDirectivesCollapsed, setIsDirectivesCollapsed] = useState<boolean>(false);
   const [isTasksCollapsed, setIsTasksCollapsed] = useState<boolean>(true);
@@ -72,6 +76,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const hasCheckedIn = Boolean(myRecord && myRecord.checkInTime);
   const hasCheckedOut = Boolean(myRecord && myRecord.checkOutTime);
 
+  // Trigger Confirmation Modal for Check-In or Check-Out
+  const handleOpenAttendanceConfirm = (type: 'checkin' | 'checkout') => {
+    if (state.role === 'staff' && state.settings.staffCanSubmitAttendance === false) {
+      alert(isBn ? 'দুঃখিত, এডমিন দ্বারা স্টাফদের হাজিরা সাবমিশন বন্ধ রাখা হয়েছে! 🔒' : 'Sorry, staff attendance submission is disabled by the Administrator! 🔒');
+      return;
+    }
+
+    // Safety constraint: Check-In request will STRICTLY stay Check-In even if triple-clicked!
+    setConfirmActionType(type);
+    setIsConfirmModalOpen(true);
+  };
+
   const executeAttendanceAction = (type: 'checkin' | 'checkout') => {
     if (state.role === 'staff' && state.settings.staffCanSubmitAttendance === false) {
       alert(isBn ? 'দুঃখিত, এডমিন দ্বারা স্টাফদের হাজিরা সাবমিশন বন্ধ রাখা হয়েছে! 🔒' : 'Sorry, staff attendance submission is disabled by the Administrator! 🔒');
@@ -79,12 +95,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
 
     if (type === 'checkin') {
-      onMarkAttendance(targetStaffId, 'present', getCurrentTimeString(), myRecord?.checkOutTime, myRecord?.note);
+      // Strictly perform Check-In and ensure Check-Out is preserved or untouched
+      onMarkAttendance(
+        targetStaffId, 
+        'present', 
+        getCurrentTimeString(), 
+        myRecord?.checkOutTime, 
+        myRecord?.note
+      );
       setDoubleClickConfirmed('checkin');
-      setClickHint(null);
-      setTimeout(() => setDoubleClickConfirmed(null), 3500);
+      setTimeout(() => setDoubleClickConfirmed(null), 4000);
     } else {
-      // Check-out (Duty Finished)
+      // Check-Out Action
       if (myRecord?.checkInTime) {
         const inMinutes = parseTimeStrToMinutes(myRecord.checkInTime);
         const nowMinutes = parseTimeStrToMinutes(getCurrentTimeString());
@@ -104,28 +126,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         myRecord?.note
       );
       setDoubleClickConfirmed('checkout');
-      setClickHint(null);
-      setTimeout(() => setDoubleClickConfirmed(null), 3500);
-    }
-  };
-
-  const handleAttendanceButtonClick = (type: 'checkin' | 'checkout') => {
-    if (state.role === 'staff' && state.settings.staffCanSubmitAttendance === false) {
-      alert(isBn ? 'দুঃখিত, এডমিন দ্বারা স্টাফদের হাজিরা সাবমিশন বন্ধ রাখা হয়েছে! 🔒' : 'Sorry, staff attendance submission is disabled by the Administrator! 🔒');
-      return;
-    }
-
-    const now = Date.now();
-    if (now - lastClickTimestamp < 800) {
-      // Double click confirmed!
-      executeAttendanceAction(type);
-      setLastClickTimestamp(0);
-    } else {
-      setLastClickTimestamp(now);
-      setClickHint(type);
-      setTimeout(() => {
-        setClickHint(prev => (prev === type ? null : prev));
-      }, 3000);
+      setTimeout(() => setDoubleClickConfirmed(null), 4000);
     }
   };
 
@@ -232,15 +233,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       ) : (
         /* Daily Status Card (Dynamic Check-in / Check-Out flow for Staff) */
-        <div 
-          onDoubleClick={() => {
-            if (!hasCheckedIn) {
-              executeAttendanceAction('checkin');
-            } else if (!hasCheckedOut) {
-              executeAttendanceAction('checkout');
-            }
-          }}
-          className={`border rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-white shadow-xl relative overflow-hidden select-none transition-all ${
+        <div className={`border rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-white shadow-xl relative overflow-hidden transition-all ${
             !hasCheckedIn
               ? 'bg-[#008BEB] bg-gradient-to-br from-[#0082FB] via-[#0070F3] to-[#0052FF] border-sky-400/30 shadow-blue-950/40'
               : !hasCheckedOut
@@ -293,23 +286,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   🔒 {isBn ? 'এডমিন আপনার হাজিরা সাবমিশন অপশনটি বন্ধ করেছে!' : 'Self-attendance is locked by Admin!'}
                 </span>
               ) : !hasCheckedIn ? (
-                clickHint === 'checkin' ? (
-                  <span className="text-amber-300 font-bold animate-pulse bg-black/30 px-2 py-0.5 rounded-md border border-amber-400/40">
-                    👆👆 {isBn ? 'Check-in নিশ্চিত করতে আর একবার ক্লিক করুন! (ডাবল ক্লিক)' : 'Click once more to confirm Check-in! (Double-click)'}
-                  </span>
-                ) : (
-                  isBn ? 'Check-in করতে নিচের বাটনে ডাবল ক্লিক করুন' : 'Double-click the button below to Check-in'
-                )
+                isBn ? 'নিরাপদ চেক-ইন করতে নিচের বাটনে ক্লিক করে নিশ্চিত করুন' : 'Click the button below to safely Check-In'
               ) : !hasCheckedOut ? (
-                clickHint === 'checkout' ? (
-                  <span className="text-amber-200 font-bold animate-pulse bg-black/40 px-2 py-0.5 rounded-md border border-amber-300/40">
-                    👆👆 {isBn ? 'Check-Out (ডিউটি শেষ) নিশ্চিত করতে আর একবার ক্লিক করুন!' : 'Click once more to confirm Check-Out (Duty Finished)!'}
-                  </span>
-                ) : (
-                  isBn 
-                    ? `হাজিরা সম্পন্ন হয়েছে (${myRecord?.checkInTime})। ডিউটি শেষ হলে Check-Out করতে বাটনে ডাবল ক্লিক করুন।`
-                    : `Checked in at ${myRecord?.checkInTime}. Double-click below to Check-Out when your duty ends.`
-                )
+                isBn 
+                  ? `হাজিরা সম্পন্ন হয়েছে (${myRecord?.checkInTime})। ডিউটি শেষ হলে Check-Out করতে বাটনে ক্লিক করুন।`
+                  : `Checked in at ${myRecord?.checkInTime}. Click below to Check-Out when your duty ends.`
               ) : (
                 isBn 
                   ? `ইন: ${myRecord?.checkInTime} • আউট: ${myRecord?.checkOutTime} | আজকের ডিউটি সফলভাবে সমাপ্ত হয়েছে! 🎉`
@@ -318,84 +299,87 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </p>
           </div>
 
-          {/* Dynamic Action Button (Check-in -> Check-Out -> Completed) */}
+          {/* Action Buttons Row */}
           {!hasCheckedIn ? (
-            /* 1. CHECK-IN BUTTON (Before checking in) */
+            /* 1. CHECK-IN BUTTON (Before checking in - Triple click safe) */
             <button
               type="button"
               id="check-in-now-btn"
-              onClick={() => handleAttendanceButtonClick('checkin')}
-              onDoubleClick={() => executeAttendanceAction('checkin')}
+              onClick={() => handleOpenAttendanceConfirm('checkin')}
+              onDoubleClick={() => handleOpenAttendanceConfirm('checkin')}
               disabled={state.role === 'staff' && state.settings.staffCanSubmitAttendance === false}
               className={`w-full mt-4 sm:mt-5 py-3.5 px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer active:scale-[0.98] ${
                 state.role === 'staff' && state.settings.staffCanSubmitAttendance === false
                   ? 'bg-gray-800 text-gray-500 border border-gray-700/80 cursor-not-allowed opacity-60'
                   : doubleClickConfirmed === 'checkin'
                   ? 'bg-emerald-500 text-white shadow-emerald-950/50 ring-2 ring-emerald-300'
-                  : clickHint === 'checkin'
-                  ? 'bg-amber-400 hover:bg-amber-300 text-gray-950 shadow-amber-950/40 ring-2 ring-amber-300'
                   : 'bg-white hover:bg-sky-50 text-[#0066FF] shadow-blue-950/30'
               }`}
             >
               <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${
                 state.role === 'staff' && state.settings.staffCanSubmitAttendance === false ? 'text-gray-500' :
-                doubleClickConfirmed === 'checkin' ? 'text-white' : clickHint === 'checkin' ? 'text-gray-950' : 'text-[#0066FF]'
+                doubleClickConfirmed === 'checkin' ? 'text-white' : 'text-[#0066FF]'
               }`} />
               <span>
                 {state.role === 'staff' && state.settings.staffCanSubmitAttendance === false
                   ? (isBn ? '🔒 হাজিরা অপশন বন্ধ আছে' : '🔒 ATTENDANCE SYSTEM LOCKED')
                   : doubleClickConfirmed === 'checkin'
                   ? (isBn ? 'চেক-ইন সম্পন্ন হয়েছে! ✅' : 'CHECKED IN SUCCESSFULLY! ✅')
-                  : clickHint === 'checkin'
-                  ? (isBn ? 'নিশ্চিত করতে আর একবার ক্লিক করুন 👆 (ডাবল ক্লিক)' : 'CLICK ONCE MORE TO CHECK-IN 👆')
-                  : (isBn ? 'CHECK-IN NOW (ডাবল ক্লিক করুন)' : 'CHECK-IN NOW (DOUBLE CLICK)')}
+                  : (isBn ? 'CHECK-IN করুন (কনফার্মেশন নিন)' : 'CHECK-IN NOW (CONFIRM)')}
               </span>
             </button>
           ) : !hasCheckedOut ? (
             /* 2. CHECK-OUT BUTTON (When already checked in, duty in progress) */
-            <button
-              type="button"
-              id="check-out-now-btn"
-              onClick={() => handleAttendanceButtonClick('checkout')}
-              onDoubleClick={() => executeAttendanceAction('checkout')}
-              disabled={state.role === 'staff' && state.settings.staffCanSubmitAttendance === false}
-              className={`w-full mt-4 sm:mt-5 py-3.5 px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer active:scale-[0.98] ${
-                state.role === 'staff' && state.settings.staffCanSubmitAttendance === false
-                  ? 'bg-gray-800 text-gray-500 border border-gray-700/80 cursor-not-allowed opacity-60'
-                  : doubleClickConfirmed === 'checkout'
-                  ? 'bg-emerald-500 text-white shadow-emerald-950/50 ring-2 ring-emerald-300'
-                  : clickHint === 'checkout'
-                  ? 'bg-amber-300 hover:bg-amber-200 text-gray-950 shadow-amber-950/40 ring-2 ring-amber-200'
-                  : 'bg-white hover:bg-rose-50 text-rose-700 shadow-rose-950/40 border border-rose-200'
-              }`}
-            >
-              <LogOut className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                doubleClickConfirmed === 'checkout' ? 'text-white' : clickHint === 'checkout' ? 'text-gray-950' : 'text-rose-700'
-              }`} />
-              <span>
-                {doubleClickConfirmed === 'checkout'
-                  ? (isBn ? 'চেক-আউট সম্পন্ন! (ডিউটি শেষ) 🎉' : 'CHECKED OUT SUCCESSFULLY! 🎉')
-                  : clickHint === 'checkout'
-                  ? (isBn ? 'ডিউটি শেষ নিশ্চিত করতে আর একবার ক্লিক করুন 👆' : 'CLICK ONCE MORE TO CHECK-OUT 👆')
-                  : (isBn ? '🛑 CHECK-OUT করুন (ডিউটি শেষ - ডাবল ক্লিক)' : '🛑 CHECK-OUT NOW (DUTY FINISHED - DOUBLE CLICK)')}
-              </span>
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 sm:mt-5">
+              <button
+                type="button"
+                id="check-in-already-done-btn"
+                onClick={() => handleOpenAttendanceConfirm('checkin')}
+                className="py-3 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 cursor-pointer"
+                title="Strictly Check-In Only"
+              >
+                <UserCheck className="w-4 h-4 text-emerald-300 shrink-0" />
+                <span className="truncate">
+                  {isBn ? `চেক-ইন সম্পন্ন (${myRecord?.checkInTime})` : `Checked In (${myRecord?.checkInTime})`}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                id="check-out-now-btn"
+                onClick={() => handleOpenAttendanceConfirm('checkout')}
+                onDoubleClick={() => handleOpenAttendanceConfirm('checkout')}
+                disabled={state.role === 'staff' && state.settings.staffCanSubmitAttendance === false}
+                className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer active:scale-[0.98] ${
+                  state.role === 'staff' && state.settings.staffCanSubmitAttendance === false
+                    ? 'bg-gray-800 text-gray-500 border border-gray-700/80 cursor-not-allowed opacity-60'
+                    : doubleClickConfirmed === 'checkout'
+                    ? 'bg-emerald-500 text-white shadow-emerald-950/50 ring-2 ring-emerald-300'
+                    : 'bg-white hover:bg-rose-50 text-rose-700 shadow-rose-950/40 border border-rose-200'
+                }`}
+              >
+                <LogOut className={`w-4 h-4 ${
+                  doubleClickConfirmed === 'checkout' ? 'text-white' : 'text-rose-700'
+                }`} />
+                <span>
+                  {doubleClickConfirmed === 'checkout'
+                    ? (isBn ? 'চেক-আউট সম্পন্ন! 🎉' : 'CHECKED OUT! 🎉')
+                    : (isBn ? '🛑 CHECK-OUT (ডিউটি শেষ)' : '🛑 CHECK-OUT (DUTY END)')}
+                </span>
+              </button>
+            </div>
           ) : (
             /* 3. COMPLETED DUTY STATE */
             <button
               type="button"
               id="duty-completed-btn"
-              onClick={() => handleAttendanceButtonClick('checkout')}
-              onDoubleClick={() => executeAttendanceAction('checkout')}
+              onClick={() => handleOpenAttendanceConfirm('checkout')}
               className="w-full mt-4 sm:mt-5 py-3 px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 shadow-inner transition-all cursor-pointer active:scale-[0.98]"
-              title={isBn ? 'আউট টাইম আপডেট করতে ডাবল ক্লিক করুন' : 'Double click to update check-out time'}
             >
               <CheckCheck className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               <span>
                 {doubleClickConfirmed === 'checkout'
                   ? (isBn ? 'চেক-আউট সময় আপডেট হয়েছে! ✅' : 'CHECK-OUT UPDATED! ✅')
-                  : clickHint === 'checkout'
-                  ? (isBn ? 'আউট টাইম আপডেট করতে আবার ক্লিক করুন 👆' : 'CLICK ONCE MORE TO UPDATE OUT TIME 👆')
                   : (isBn ? `আজকের ডিউটি সমাপ্ত (আউট: ${myRecord?.checkOutTime}) ✅` : `DUTY COMPLETED (Checked Out: ${myRecord?.checkOutTime}) ✅`)}
               </span>
             </button>
@@ -505,6 +489,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Professional Attendance Confirmation Popup Modal */}
+      <AttendanceConfirmModal
+        isOpen={isConfirmModalOpen}
+        actionType={confirmActionType}
+        staffName={currentStaff?.name || currentUserName}
+        checkInTime={myRecord?.checkInTime}
+        onConfirm={() => executeAttendanceAction(confirmActionType)}
+        onClose={() => setIsConfirmModalOpen(false)}
+        isBn={isBn}
+      />
 
     </div>
   );

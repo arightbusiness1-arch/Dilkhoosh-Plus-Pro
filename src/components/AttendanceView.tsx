@@ -19,6 +19,7 @@ import { AppState, StaffMember, AttendanceStatus, AttendanceRecord, AppTab } fro
 import { toBengaliNumber, formatEnglishDate, getCurrentTimeString, getTodayDateString, parseTimeStrToMinutes } from '../utils/dateUtils';
 import { departmentsList } from '../data/initialData';
 import { ViewBackButton } from './ViewBackButton';
+import { AttendanceConfirmModal } from './AttendanceConfirmModal';
 
 interface AttendanceViewProps {
   state: AppState;
@@ -42,6 +43,57 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState<string>('');
+
+  // Confirmation modal state
+  const [modalStaff, setModalStaff] = useState<{ id: string; name: string; currentStatus?: AttendanceStatus; checkInTime?: string; checkOutTime?: string; note?: string } | null>(null);
+  const [modalActionType, setModalActionType] = useState<'checkin' | 'checkout'>('checkin');
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
+
+  const handleOpenCheckInModal = (staff: StaffMember, currentStatus?: AttendanceStatus, checkOutTime?: string, note?: string) => {
+    setModalStaff({
+      id: staff.id,
+      name: staff.name,
+      currentStatus,
+      checkOutTime,
+      note
+    });
+    setModalActionType('checkin');
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleOpenCheckOutModal = (staff: StaffMember, currentStatus?: AttendanceStatus, checkInTime?: string, note?: string) => {
+    if (checkInTime) {
+      const nowMinutes = parseTimeStrToMinutes(getCurrentTimeString());
+      const inMinutes = parseTimeStrToMinutes(checkInTime);
+      if (nowMinutes - inMinutes < 1) {
+        alert(state.settings.language === 'bn' 
+          ? '⚠️ আপনি মাত্র চেক-ইন করেছেন! চেক-আউট করার জন্য অন্তত ১ মিনিট অপেক্ষা করুন।' 
+          : '⚠️ You just checked in! Please wait at least 1 minute before checking out.');
+        return;
+      }
+    }
+
+    setModalStaff({
+      id: staff.id,
+      name: staff.name,
+      currentStatus,
+      checkInTime,
+      note
+    });
+    setModalActionType('checkout');
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmModalAction = () => {
+    if (!modalStaff) return;
+    if (modalActionType === 'checkin') {
+      onMarkAttendance(modalStaff.id, modalStaff.currentStatus || 'present', getCurrentTimeString(), modalStaff.checkOutTime, modalStaff.note);
+    } else {
+      onMarkAttendance(modalStaff.id, modalStaff.currentStatus || 'present', modalStaff.checkInTime || getCurrentTimeString(), getCurrentTimeString(), modalStaff.note);
+    }
+    setIsConfirmModalOpen(false);
+    setModalStaff(null);
+  };
 
   const today = state.selectedDate;
 
@@ -460,8 +512,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       <button
                         type="button"
                         id={`check-in-btn-${staff.id}`}
-                        onClick={() => onMarkAttendance(staff.id, currentStatus || 'present', getCurrentTimeString(), checkOutTime, note)}
-                        className="text-[9px] px-2 py-0.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-sans font-bold transition-all ml-0.5"
+                        onClick={() => handleOpenCheckInModal(staff, currentStatus, checkOutTime, note)}
+                        className="text-[9px] px-2 py-0.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-sans font-bold transition-all ml-0.5 cursor-pointer"
                       >
                         Check-in
                       </button>
@@ -479,21 +531,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       <button
                         type="button"
                         id={`check-out-btn-${staff.id}`}
-                        onClick={() => {
-                          const nowMinutes = parseTimeStrToMinutes(getCurrentTimeString());
-                          const inMinutes = parseTimeStrToMinutes(checkInTime);
-                          
-                          // Prevent check-out if less than 1 minute has passed
-                          if (nowMinutes - inMinutes < 1) {
-                            alert(state.settings.language === 'bn' 
-                              ? '⚠️ আপনি মাত্র চেক-ইন করেছেন! চেক-আউট করার জন্য অন্তত ১ মিনিট অপেক্ষা করুন।' 
-                              : '⚠️ You just checked in! Please wait at least 1 minute before checking out.');
-                            return;
-                          }
-                          
-                          onMarkAttendance(staff.id, currentStatus || 'present', checkInTime, getCurrentTimeString(), note);
-                        }}
-                        className="text-[9px] px-2 py-0.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-sans font-bold transition-all ml-0.5"
+                        onClick={() => handleOpenCheckOutModal(staff, currentStatus, checkInTime, note)}
+                        className="text-[9px] px-2 py-0.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-sans font-bold transition-all ml-0.5 cursor-pointer"
                       >
                         Check-Out
                       </button>
@@ -610,6 +649,20 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           })}
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <AttendanceConfirmModal
+        isOpen={isConfirmModalOpen}
+        actionType={modalActionType}
+        staffName={modalStaff?.name || ''}
+        checkInTime={modalStaff?.checkInTime}
+        onConfirm={handleConfirmModalAction}
+        onClose={() => {
+          setIsConfirmModalOpen(false);
+          setModalStaff(null);
+        }}
+        isBn={state.settings.language === 'bn'}
+      />
 
     </div>
   );

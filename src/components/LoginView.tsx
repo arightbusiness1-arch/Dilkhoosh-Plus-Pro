@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppState } from '../types';
+import { LoginReason } from '../utils/session';
 import { 
   Lock, 
   ShieldCheck, 
@@ -14,15 +15,21 @@ import {
   ChevronRight,
   Delete,
   Hash,
-  Code2
+  Code2,
+  Smartphone,
+  Sun,
+  Clock,
+  LogOut,
+  Shield
 } from 'lucide-react';
 
 interface LoginViewProps {
   state: AppState;
+  loginReason?: LoginReason;
   onLoginSuccess: (loginData: { role: 'admin' | 'staff'; staffId?: string }) => void;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ state, onLoginSuccess }) => {
+export const LoginView: React.FC<LoginViewProps> = ({ state, loginReason, onLoginSuccess }) => {
   const isBn = state.settings.language === 'bn';
 
   // Helper to generate a random 5-digit security PIN
@@ -189,6 +196,60 @@ export const LoginView: React.FC<LoginViewProps> = ({ state, onLoginSuccess }) =
           </div>
         </div>
 
+        {/* Security Notification Banner for PIN Enforcement Reason */}
+        {loginReason && (
+          <div className={`p-3 rounded-2xl border text-left flex items-start gap-2.5 shadow-lg animate-in fade-in duration-200 ${
+            loginReason === 'minimized_timeout'
+              ? 'bg-rose-950/50 border-rose-500/50 text-rose-200 shadow-rose-950/40'
+              : loginReason === 'first_login_today'
+              ? 'bg-amber-950/50 border-amber-500/50 text-amber-200 shadow-amber-950/40'
+              : loginReason === 'new_device'
+              ? 'bg-sky-950/50 border-sky-500/50 text-sky-200 shadow-sky-950/40'
+              : 'bg-slate-900 border-slate-700 text-slate-200'
+          }`}>
+            <div className="p-1 rounded-lg shrink-0 mt-0.5 bg-black/30">
+              {loginReason === 'minimized_timeout' && <Clock className="w-4 h-4 text-rose-400" />}
+              {loginReason === 'first_login_today' && <Sun className="w-4 h-4 text-amber-400" />}
+              {loginReason === 'new_device' && <Smartphone className="w-4 h-4 text-sky-400" />}
+              {(loginReason === 'inactivity_timeout' || loginReason === 'manual_logout') && <Lock className="w-4 h-4 text-emerald-400" />}
+            </div>
+            <div className="space-y-0.5 min-w-0">
+              <p className="text-xs font-black tracking-tight">
+                {loginReason === 'minimized_timeout' && (isBn ? '🔒 ব্যাকগ্রাউন্ড অটোলক (মিনিমাইজ)' : '🔒 Background Auto-Lock')}
+                {loginReason === 'first_login_today' && (isBn ? '🌅 আজকের প্রথম লগইন সিকিউরিটি' : '🌅 First Login Today')}
+                {loginReason === 'new_device' && (isBn ? '📱 নতুন ডিভাইস ডিটেকশন' : '📱 New Device Verification')}
+                {loginReason === 'inactivity_timeout' && (isBn ? '⏳ ইনঅ্যাক্টিভিটি লক' : '⏳ Idle Inactivity Lock')}
+                {loginReason === 'manual_logout' && (isBn ? '🔑 পিন ভেরিফিকেশন' : '🔑 PIN Verification')}
+              </p>
+              <p className="text-[10.5px] leading-snug font-medium opacity-90">
+                {loginReason === 'minimized_timeout' && (
+                  isBn 
+                    ? 'অ্যাপটি ১৫ মিনিটের বেশি সময় ব্যাকগ্রাউন্ডে থাকায় নিরাপত্তার স্বার্থে সেশন ক্লিয়ার করে লক করা হয়েছে। পিন দিন।' 
+                    : 'App was minimized for over 15 minutes and locked for security. Enter PIN to continue.'
+                )}
+                {loginReason === 'first_login_today' && (
+                  isBn 
+                    ? 'আজকের দিনের প্রথম প্রবেশের জন্য পিন (PIN) কোড দেওয়া বাধ্যতামূলক।' 
+                    : 'PIN verification is required for the first login of the day.'
+                )}
+                {loginReason === 'new_device' && (
+                  isBn 
+                    ? 'নতুন ব্রাউজার/ডিভাইসে প্রথমবার লগইনের জন্য পিন কোড যাচাই প্রয়োজন।' 
+                    : 'First time on this device: PIN verification is mandatory to log in.'
+                )}
+                {loginReason === 'inactivity_timeout' && (
+                  isBn 
+                    ? 'অ্যাপটি বেশ কিছু সময় অব্যবহৃত থাকায় স্বয়ংক্রিয়ভাবে লক হয়েছে।' 
+                    : 'Session timed out due to inactivity. Please enter PIN code.'
+                )}
+                {loginReason === 'manual_logout' && (
+                  isBn ? 'লগইন করতে আপনার পিন কোড প্রদান করুন।' : 'Please enter your PIN code to log in.'
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Portal Switcher Tabs */}
         <div className="grid grid-cols-2 gap-1 bg-[#010d1a] p-1 rounded-2xl border border-slate-800/80">
           <button
@@ -254,10 +315,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ state, onLoginSuccess }) =
               <Lock className="w-4 h-4 text-amber-400 shrink-0" />
               <div>
                 <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
-                  {isBn ? 'কাস্টম সিকিউরিটি পিন:' : 'Custom Admin PIN:'}
+                  {isBn ? 'সিকিউরিটি পিন:' : 'Security PIN:'}
                 </p>
                 <p className="text-xs font-bold text-slate-300">
-                  {isBn ? `${customPin.length} ডিজিটের কাস্টম পিন দিন` : `Enter ${customPin.length}-digit custom PIN`}
+                  {isBn ? `${customPin.length} ডিজিটের পিন দিন` : `Enter ${customPin.length}-digit PIN`}
                 </p>
               </div>
             </div>

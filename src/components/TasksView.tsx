@@ -25,6 +25,7 @@ import { AppState, TaskItem, TaskStatus, PriorityLevel, SubTask, AttendanceStatu
 import { toBengaliNumber, formatEnglishDate, getCurrentTimeString } from '../utils/dateUtils';
 import { ViewBackButton } from './ViewBackButton';
 import { EditTaskModal } from './EditTaskModal';
+import { AttendanceConfirmModal } from './AttendanceConfirmModal';
 
 interface TasksViewProps {
   state: AppState;
@@ -59,6 +60,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
   const [taskToDelete, setTaskToDelete] = useState<TaskItem | null>(null);
   const [taskToEdit, setTaskToEdit] = useState<TaskItem | null>(null);
   const [completedBoxOpen, setCompletedBoxOpen] = useState<boolean>(false);
+  const [isAttendanceConfirmOpen, setIsAttendanceConfirmOpen] = useState<boolean>(false);
 
   const isBn = state.settings.language === 'bn';
   const isStaffRole = state.role === 'staff';
@@ -358,7 +360,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
                 type="button"
                 id="tasks-check-in-btn"
                 onClick={() => {
-                  onMarkAttendance(effectiveUserId, 'present', getCurrentTimeString());
+                  setIsAttendanceConfirmOpen(true);
                 }}
                 className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm shadow-lg shadow-emerald-950/60 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer border border-emerald-400/40"
               >
@@ -988,6 +990,21 @@ export const TasksView: React.FC<TasksViewProps> = ({
           isBn={isBn}
         />
       )}
+
+      {/* Attendance Confirmation Modal */}
+      <AttendanceConfirmModal
+        isOpen={isAttendanceConfirmOpen}
+        actionType="checkin"
+        staffName={state.staffList.find(s => s.id === effectiveUserId)?.name || 'স্টাফ'}
+        onConfirm={() => {
+          if (onMarkAttendance) {
+            onMarkAttendance(effectiveUserId, 'present', getCurrentTimeString());
+          }
+          setIsAttendanceConfirmOpen(false);
+        }}
+        onClose={() => setIsAttendanceConfirmOpen(false)}
+        isBn={isBn}
+      />
 
     </div>
   );

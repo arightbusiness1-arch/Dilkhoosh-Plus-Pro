@@ -118,11 +118,11 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
       description: `${currentStaffMember?.name || 'স্টাফ'}-এর আজকের কর্মদিবসের উপস্থিতি ও চেক-ইন এখনো সম্পন্ন করা হয়নি। অনুগ্রহ করে সময়মতো আপনার হাজিরা নিশ্চিত করুন।`,
       dateOrTime: formatEnglishDate(today),
       authorityOrMeta: `স্টাফ সদস্য: ${currentStaffMember?.name || 'আপনি'} • স্ট্যাটাস: পেন্ডিং চেক-ইন`,
-      actionLabel: 'চেক-ইন করুন',
+      actionLabel: 'চেক-ইন পেজে যান',
       actionTab: 'home',
       onAction: () => {
-        if (onMarkAttendance) {
-          onMarkAttendance(effectiveUserId, 'present', getCurrentTimeString());
+        if (onNavigateTab) {
+          onNavigateTab('home');
         }
       },
       isRead: readNotificationIds.includes(id)

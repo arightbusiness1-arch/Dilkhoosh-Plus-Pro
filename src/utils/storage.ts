@@ -35,11 +35,74 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export const DEFAULT_HUB_DATA: HubData = {
-  instructions: [],
-  reminders: [],
-  emergencies: [],
-  ideas: [],
-  actions: []
+  instructions: [
+    {
+      id: 'inst-101',
+      text: 'কাস্টমার অর্ডারের ক্ষেত্রে প্রসেসিং সময় সর্বোচ্চ ১০ মিনিটের মধ্যে সীমাবদ্ধ রাখুন।',
+      status: 'progress',
+      assignedStaffId: 'st-2'
+    },
+    {
+      id: 'inst-102',
+      text: 'প্রতিদিন রাতে দোকান বন্ধের আগে সকল পাওয়ার সুইচ ও এয়ার কন্ডিশনার বন্ধ রাখা নিশ্চিত করুন।',
+      status: 'pending',
+      assignedStaffId: 'st-3'
+    }
+  ],
+  reminders: [
+    {
+      id: 'rem-101',
+      title: 'বিকালে নতুন কাঁচামাল স্টক রিসিভ ও ওজন পরীক্ষা',
+      time: '04:00 PM',
+      status: 'active'
+    },
+    {
+      id: 'rem-102',
+      title: 'সাপ্তাহিক অল-স্টাফ ব্রিফিং ও পারফর্ম্যান্স রিভিউ মিটিং',
+      time: '09:00 AM',
+      status: 'coming'
+    }
+  ],
+  emergencies: [
+    {
+      id: 'emg-101',
+      title: 'ফ্রন্ট গেটের সিসিটিভি ক্যামেরা ২ মেইনটেন্যান্স প্রসেসে আছে',
+      phone: '01700000000',
+      status: 'সার্ভিসিং টিমকে কল দেওয়া হয়েছে',
+      type: 'contact',
+      description: 'জরুরী সিকিউরিটি আপডেট'
+    }
+  ],
+  ideas: [
+    {
+      id: 'ida-101',
+      text: 'কাস্টমার ফিডব্যাক কার্ড কিউআর কোডের মাধ্যমে ডিজিটাল সংগ্রহ করার নতুন আইডিয়া।',
+      isRemembered: true,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'ida-102',
+      text: 'মাসিক সেরা পারফর্মিং স্টাফ মেম্বারকে বিশেষ রিওয়ার্ড ব্যাজ দেওয়ার প্রস্তাব।',
+      isRemembered: false,
+      createdAt: new Date().toISOString()
+    }
+  ],
+  actions: [
+    {
+      id: 'act-101',
+      text: 'আজকের স্পেশাল মেনু ডিসপ্লে বোর্ডে টাঙানো',
+      isDone: true,
+      status: 'completed',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'act-102',
+      text: 'নতুন ডেলিভারি রাইডারদের আইডি কার্ড দেওয়া',
+      isDone: false,
+      status: 'in_progress',
+      createdAt: new Date().toISOString()
+    }
+  ]
 };
 
 export const loadInitialState = (): AppState => {
@@ -70,15 +133,14 @@ export const loadInitialState = (): AppState => {
     let parsedHub = DEFAULT_HUB_DATA;
     if (rawHub) {
       try {
-        const loaded = JSON.parse(rawHub);
-        parsedHub = { ...DEFAULT_HUB_DATA, ...loaded };
+        parsedHub = JSON.parse(rawHub);
       } catch (e) {
         parsedHub = DEFAULT_HUB_DATA;
       }
     }
 
     let loadedStaff: StaffMember[] = rawStaff ? JSON.parse(rawStaff) : initialStaffList;
-    if (!loadedStaff || loadedStaff.length === 0) {
+    if (!loadedStaff || !Array.isArray(loadedStaff) || loadedStaff.length === 0) {
       loadedStaff = initialStaffList;
     }
     const hasAdmin = loadedStaff.some(s => s.id === 'admin');
@@ -89,7 +151,7 @@ export const loadInitialState = (): AppState => {
         nameEn: 'System Administrator',
         role: 'System Administrator',
         department: 'Management',
-        phone: '',
+        phone: '01700000000',
         email: 'admin@dilkhoosh.com',
         avatarColor: 'bg-indigo-600',
         shift: 'General Shift',
@@ -97,18 +159,28 @@ export const loadInitialState = (): AppState => {
         isActive: true
       };
       loadedStaff = [adminProfile, ...loadedStaff];
-      try {
-        localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(loadedStaff));
-      } catch (e) {
-        console.error('Storage error', e);
-      }
+    }
+
+    let loadedAtt: AttendanceRecord[] = rawAtt ? JSON.parse(rawAtt) : initialAttendanceRecords;
+    if (!loadedAtt || !Array.isArray(loadedAtt)) {
+      loadedAtt = initialAttendanceRecords;
+    }
+
+    let loadedDir: Directive[] = rawDir ? JSON.parse(rawDir) : initialDirectives;
+    if (!loadedDir || !Array.isArray(loadedDir)) {
+      loadedDir = initialDirectives;
+    }
+
+    let loadedTasks: TaskItem[] = rawTasks ? JSON.parse(rawTasks) : initialTasks;
+    if (!loadedTasks || !Array.isArray(loadedTasks)) {
+      loadedTasks = initialTasks;
     }
 
     return {
       staffList: loadedStaff,
-      attendanceRecords: rawAtt ? JSON.parse(rawAtt) : initialAttendanceRecords,
-      directives: rawDir ? JSON.parse(rawDir) : initialDirectives,
-      tasks: rawTasks ? JSON.parse(rawTasks) : initialTasks,
+      attendanceRecords: loadedAtt,
+      directives: loadedDir,
+      tasks: loadedTasks,
       selectedDate: getTodayDateString(),
       currentUserId: rawUser || 'admin',
       role: (rawRole as any) || 'admin',

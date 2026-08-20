@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { AppState, HubData, HubIdea, HubReminder, HubActionItem } from '../types';
 import { EmergencyIcon } from './EmergencyIcon';
+import { NewDirectiveModal } from './NewDirectiveModal';
 import { ClockTimePicker } from './ClockTimePicker';
 import { AiAssistantModal } from './AiAssistantModal';
 
@@ -72,6 +73,7 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [showAddReminder, setShowAddReminder] = useState(false);
+  const [showAddInstruction, setShowAddInstruction] = useState(false);
   const [quickReminderTitle, setQuickReminderTitle] = useState('');
   const [quickReminderTime, setQuickReminderTime] = useState('প্রতিদিন 09:00 AM');
 
@@ -94,6 +96,21 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
     setQuickReminderTitle('');
     setShowAddReminder(false);
     showToast(isBn ? 'নতুন রিমাইন্ডার সফলভাবে সেট করা হয়েছে! ⏰' : 'New reminder created successfully! ⏰');
+  };
+
+  const handleAddInstruction = (directive: any) => {
+    if (!onUpdateHubData) return;
+    const newDir = {
+      ...directive,
+      id: `dir-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      acknowledgedStaffIds: []
+    };
+    onUpdateHubData({
+      ...state.hubData,
+      instructions: [newDir, ...state.hubData.instructions]
+    });
+    showToast(isBn ? 'নতুন বিশেষ নির্দেশিকা যুক্ত করা হয়েছে! 🎯' : 'New special instruction added! 🎯');
   };
 
   const currentIdeas: HubIdea[] = state.hubData?.ideas || [
@@ -278,24 +295,21 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
     <div className="space-y-6 pb-28 w-full max-w-5xl mx-auto px-4 sm:px-6 animate-in fade-in duration-300">
       
       {/* Hub Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-950/90 via-sky-950/90 to-gray-900 border border-sky-500/30 p-4 sm:p-5 shadow-lg">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-950/90 via-sky-950/90 to-gray-900 border border-sky-500/30 p-3 shadow-lg">
         <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-sky-500/10 rounded-full blur-xl pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[10px] font-bold">
-              <Compass className="w-3.5 h-3.5 text-sky-400 animate-spin-slow" />
-              <span>Central Management Hub</span>
-            </div>
-            <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
+        <div className="relative z-10 flex items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <h1 className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
+              <Compass className="w-4 h-4 text-sky-400" />
               🌟 দিলখুশ হাব (Hub)
             </h1>
-            <p className="text-[11px] sm:text-xs text-gray-400 max-w-lg leading-normal">
-              বিশেষ নির্দেশিকা, রিমাইন্ডার, আইডিয়া, জরুরী সতর্কতা, নিজস্ব অ্যাকশন এবং এআই অ্যাসিস্ট্যান্টের চমৎকার সমাহার।
+            <p className="text-[10px] text-gray-400 leading-tight">
+              নির্দেশিকা, রিমাইন্ডার, আইডিয়া, সতর্কতা, নিজস্ব অ্যাকশন ও এআই অ্যাসিস্ট্যান্ট।
             </p>
           </div>
-          <div className="flex items-center gap-1.5 bg-gray-950/80 px-2.5 py-1.5 rounded-xl border border-sky-500/20 shadow-inner shrink-0 self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 bg-gray-950/80 px-2 py-1 rounded-lg border border-sky-500/20 shadow-inner shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-[10px] font-bold text-emerald-400 font-sans">System Active v{state.settings.version}</span>
+            <span className="text-[9px] font-bold text-emerald-400 font-sans">v{state.settings.version}</span>
           </div>
         </div>
       </div>
@@ -314,9 +328,13 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
               <div className="w-9 h-9 rounded-xl bg-indigo-500/25 border border-indigo-400/50 flex items-center justify-center text-lg shadow-md shadow-indigo-950">
                 🎯
               </div>
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 uppercase tracking-wider">
-                Priority 1
-              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setShowAddInstruction(true); }}
+                className="w-7 h-7 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-md shadow-indigo-950/50 transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4 font-black" />
+              </button>
             </div>
             <h3 className="text-sm sm:text-base font-black text-white group-hover:text-indigo-300 transition-colors mb-1">
               Special Instructions
@@ -326,8 +344,8 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
             </p>
           </div>
           <div className="mt-4 pt-2.5 border-t border-indigo-950/80 flex items-center justify-between text-indigo-400 text-[11px] font-bold">
-            <span>দেখুন</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
         </div>
 
@@ -342,9 +360,13 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
               <div className="w-9 h-9 rounded-xl bg-amber-500/25 border border-amber-400/50 flex items-center justify-center text-lg shadow-md shadow-amber-950">
                 ⏰
               </div>
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 uppercase tracking-wider">
-                Alerts
-              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setShowAddReminder(true); setActiveModal('reminder'); }}
+                className="w-7 h-7 rounded-lg bg-amber-500 hover:bg-amber-400 text-gray-950 flex items-center justify-center shadow-md shadow-amber-950/50 transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4 font-black" />
+              </button>
             </div>
             <h3 className="text-sm sm:text-base font-black text-white group-hover:text-amber-300 transition-colors mb-1">
               Reminder
@@ -354,8 +376,8 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
             </p>
           </div>
           <div className="mt-4 pt-2.5 border-t border-amber-950/80 flex items-center justify-between text-amber-400 text-[11px] font-bold">
-            <span>দেখুন</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
         </div>
 
@@ -382,8 +404,8 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
             </p>
           </div>
           <div className="mt-4 pt-2.5 border-t border-emerald-950/80 flex items-center justify-between text-emerald-400 text-[11px] font-bold">
-            <span>শেয়ার করুন</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
         </div>
 
@@ -398,9 +420,13 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
               <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center p-1.5 shadow-md shadow-rose-950">
                 <EmergencyIcon className="w-6 h-6 object-contain drop-shadow" />
               </div>
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/40 uppercase tracking-wider">
-                Critical
-              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setActiveModal('emergency'); /* Assume emergency modal has add logic */ }}
+                className="w-7 h-7 rounded-lg bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-md shadow-rose-950/50 transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4 font-black" />
+              </button>
             </div>
             <h3 className="text-sm sm:text-base font-black text-white group-hover:text-rose-300 transition-colors mb-1">
               {isBn ? 'জরুরী কাজ ও অ্যালার্ট' : 'Emergency & Urgent Tasks'}
@@ -410,8 +436,8 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
             </p>
           </div>
           <div className="mt-4 pt-2.5 border-t border-rose-950/80 flex items-center justify-between text-rose-400 text-[11px] font-bold">
-            <span>{isBn ? 'তথ্য ও কাজ দেখুন' : 'View Tasks & Info'}</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
         </div>
 
@@ -426,9 +452,13 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
               <div className="w-9 h-9 rounded-xl bg-sky-500/25 border border-sky-400/50 flex items-center justify-center text-lg shadow-md shadow-sky-950">
                 🛠️
               </div>
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/40 uppercase tracking-wider">
-                Action
-              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setActiveModal('action'); }}
+                className="w-7 h-7 rounded-lg bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center shadow-md shadow-sky-950/50 transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4 font-black" />
+              </button>
             </div>
             <h3 className="text-sm sm:text-base font-black text-white group-hover:text-sky-300 transition-colors mb-1">
               Own action
@@ -438,8 +468,8 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
             </p>
           </div>
           <div className="mt-4 pt-2.5 border-t border-sky-950/80 flex items-center justify-between text-sky-400 text-[11px] font-bold">
-            <span>{isBn ? 'টাস্ক দেখুন ও যুক্ত করুন' : 'View & Add Tasks'}</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
+            <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
         </div>
 
@@ -480,6 +510,11 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
       </div>
 
       {/* Interactive Modals for each Hub item */}
+      <NewDirectiveModal
+        isOpen={showAddInstruction}
+        onClose={() => setShowAddInstruction(false)}
+        onAddDirective={handleAddInstruction}
+      />
       {activeModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-gray-900 border border-sky-500/50 rounded-2xl sm:rounded-3xl w-full max-w-lg p-4 sm:p-5 shadow-2xl relative my-auto max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 overflow-hidden">

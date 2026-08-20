@@ -43,19 +43,81 @@ import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { DataCenterModal } from './components/DataCenterModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { LoginView } from './components/LoginView';
+import { 
+  isNewDevice, 
+  isFirstLoginToday, 
+  isSessionActive, 
+  recordSuccessfulLogin, 
+  clearActiveSession, 
+  MINIMIZE_TIMEOUT_MS, 
+  INACTIVITY_TIMEOUT_MS, 
+  LoginReason 
+} from './utils/session';
 import { CheckCircle2, Info, Lock, X, ShieldAlert, Eye, EyeOff, Bot, Sparkles, UserCheck, RefreshCw, ShieldCheck, Key } from 'lucide-react';
+
+// Helper to safely merge cloud data with local data without losing added items
+function mergeById<T extends { id: string }>(localArr?: T[], cloudArr?: T[], recycleBin: any[] = []): T[] {
+  const deletedIds = new Set<string>();
+  if (Array.isArray(recycleBin)) {
+    for (const item of recycleBin) {
+      if (item?.originalId) deletedIds.add(item.originalId);
+      if (item?.itemData?.id) deletedIds.add(item.itemData.id);
+    }
+  }
+
+  const map = new Map<string, T>();
+  
+  if (Array.isArray(cloudArr)) {
+    for (const item of cloudArr) {
+      if (item && item.id && !deletedIds.has(item.id)) {
+        map.set(item.id, item);
+      }
+    }
+  }
+
+  if (Array.isArray(localArr)) {
+    for (const item of localArr) {
+      if (item && item.id && !deletedIds.has(item.id)) {
+        map.set(item.id, item);
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
 
 export default function App() {
   const [state, setState] = useState<AppState>(() => loadInitialState());
   const [activeTab, setActiveTab] = useState<AppTab>('home');
 
-  // Login session state (Defaults to Login Page)
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  // Security & Session Reason State
+  const [loginReason, setLoginReason] = useState<LoginReason>(() => {
+    if (isNewDevice()) return 'new_device';
+    if (isFirstLoginToday()) return 'first_login_today';
+    if (!isSessionActive()) return 'manual_logout';
+    return null;
+  });
+
+  // Login session state (Mandatory PIN enforcement on new device or first login of day)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    if (isNewDevice() || !isSessionActive()) {
+      return false;
+    }
+    return true;
+  });
+
+  const minimizedTimeRef = useRef<number | null>(null);
   
+  const adminPin = state.settings.customAdminPin || state.settings.adminPin || '300723';
   // Online/Offline status & Firebase Cloud Storage Sync state
   const [isOnline, setIsOnline] = useState<boolean>(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [firebaseStatus, setFirebaseStatus] = useState<'connecting' | 'connected' | 'offline'>('connecting');
   const isCloudSyncingRef = useRef<boolean>(false);
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Monitor network connectivity changes (Online/Offline)
   useEffect(() => {
@@ -65,7 +127,7 @@ export default function App() {
       testFirebaseConnection().then(connected => {
         if (connected) {
           setFirebaseStatus('connected');
-          syncStateToCloud(state);
+          syncStateToCloud(stateRef.current);
         } else {
           setFirebaseStatus('offline');
         }
@@ -86,7 +148,7 @@ export default function App() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [state]);
+  }, []);
 
   // Initialize Firebase connection and subscribe to live cloud updates
   useEffect(() => {
@@ -103,15 +165,24 @@ export default function App() {
           if (cloudData && Object.keys(cloudData).length > 0) {
             isCloudSyncingRef.current = true;
             setState(prev => {
+              const currentRecycleBin = cloudData.recycleBin || prev.recycleBin;
               const merged: AppState = {
                 ...prev,
-                staffList: cloudData.staffList && cloudData.staffList.length > 0 ? cloudData.staffList : prev.staffList,
-                attendanceRecords: cloudData.attendanceRecords || prev.attendanceRecords,
-                directives: cloudData.directives || prev.directives,
-                tasks: cloudData.tasks || prev.tasks,
+                staffList: mergeById(prev.staffList, cloudData.staffList, currentRecycleBin),
+                attendanceRecords: mergeById(prev.attendanceRecords, cloudData.attendanceRecords, currentRecycleBin),
+                directives: mergeById(prev.directives, cloudData.directives, currentRecycleBin),
+                tasks: mergeById(prev.tasks, cloudData.tasks, currentRecycleBin),
                 settings: cloudData.settings ? { ...prev.settings, ...cloudData.settings } : prev.settings,
-                hubData: cloudData.hubData ? { ...prev.hubData, ...cloudData.hubData } : prev.hubData,
-                recycleBin: cloudData.recycleBin || prev.recycleBin
+                hubData: cloudData.hubData ? {
+                  ...prev.hubData,
+                  ...cloudData.hubData,
+                  instructions: mergeById(prev.hubData?.instructions, cloudData.hubData?.instructions, currentRecycleBin),
+                  reminders: mergeById(prev.hubData?.reminders, cloudData.hubData?.reminders, currentRecycleBin),
+                  emergencies: mergeById(prev.hubData?.emergencies, cloudData.hubData?.emergencies, currentRecycleBin),
+                  ideas: mergeById(prev.hubData?.ideas, cloudData.hubData?.ideas, currentRecycleBin),
+                  actions: mergeById(prev.hubData?.actions, cloudData.hubData?.actions, currentRecycleBin)
+                } : prev.hubData,
+                recycleBin: currentRecycleBin
               };
               // Sync to local storage as cache
               saveStaffList(merged.staffList);
@@ -136,15 +207,24 @@ export default function App() {
             if (isCloudSyncingRef.current) return;
             isCloudSyncingRef.current = true;
             setState(prev => {
+              const currentRecycleBin = cloudData.recycleBin || prev.recycleBin;
               const updated: AppState = {
                 ...prev,
-                staffList: cloudData.staffList && cloudData.staffList.length > 0 ? cloudData.staffList : prev.staffList,
-                attendanceRecords: cloudData.attendanceRecords || prev.attendanceRecords,
-                directives: cloudData.directives || prev.directives,
-                tasks: cloudData.tasks || prev.tasks,
+                staffList: mergeById(prev.staffList, cloudData.staffList, currentRecycleBin),
+                attendanceRecords: mergeById(prev.attendanceRecords, cloudData.attendanceRecords, currentRecycleBin),
+                directives: mergeById(prev.directives, cloudData.directives, currentRecycleBin),
+                tasks: mergeById(prev.tasks, cloudData.tasks, currentRecycleBin),
                 settings: cloudData.settings ? { ...prev.settings, ...cloudData.settings } : prev.settings,
-                hubData: cloudData.hubData ? { ...prev.hubData, ...cloudData.hubData } : prev.hubData,
-                recycleBin: cloudData.recycleBin || prev.recycleBin
+                hubData: cloudData.hubData ? {
+                  ...prev.hubData,
+                  ...cloudData.hubData,
+                  instructions: mergeById(prev.hubData?.instructions, cloudData.hubData?.instructions, currentRecycleBin),
+                  reminders: mergeById(prev.hubData?.reminders, cloudData.hubData?.reminders, currentRecycleBin),
+                  emergencies: mergeById(prev.hubData?.emergencies, cloudData.hubData?.emergencies, currentRecycleBin),
+                  ideas: mergeById(prev.hubData?.ideas, cloudData.hubData?.ideas, currentRecycleBin),
+                  actions: mergeById(prev.hubData?.actions, cloudData.hubData?.actions, currentRecycleBin)
+                } : prev.hubData,
+                recycleBin: currentRecycleBin
               };
               saveStaffList(updated.staffList);
               saveAttendanceRecords(updated.attendanceRecords);
@@ -349,18 +429,10 @@ export default function App() {
   // Helper function to generate a random 5-digit security PIN
   const generate5DigitPin = () => Math.floor(10000 + Math.random() * 90000).toString();
 
-  // Admin PIN verification state with changing 5-digit PIN
+  // Admin PIN verification state
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
-  const [dynamicPin, setDynamicPin] = useState<string>(() => generate5DigitPin());
-
-  // Function to refresh the dynamic 5-digit PIN code
-  const refreshDynamicPin = () => {
-    const newPin = generate5DigitPin();
-    setDynamicPin(newPin);
-    return newPin;
-  };
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -405,8 +477,9 @@ export default function App() {
       };
     });
 
+    recordSuccessfulLogin();
     setIsLoggedIn(true);
-    sessionStorage.setItem('dilkhoosh_is_logged_in', 'true');
+    setLoginReason(null);
     showToast(
       state.settings.language === 'bn' 
         ? `সফলভাবে ${nextRole === 'admin' ? 'এডমিন' : 'স্টাফ'} হিসেবে লগইন করেছেন 🎉` 
@@ -415,10 +488,107 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    clearActiveSession();
     setIsLoggedIn(false);
-    sessionStorage.removeItem('dilkhoosh_is_logged_in');
+    setLoginReason('manual_logout');
     showToast(state.settings.language === 'bn' ? 'সফলভাবে লগআউট করা হয়েছে 👋' : 'Successfully logged out 👋');
   };
+
+  // Monitor app minimization / backgrounding and auto-logout if backgrounded for over 15 minutes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        minimizedTimeRef.current = Date.now();
+      } else {
+        if (minimizedTimeRef.current && isLoggedIn) {
+          const hiddenDuration = Date.now() - minimizedTimeRef.current;
+          if (hiddenDuration >= MINIMIZE_TIMEOUT_MS) {
+            clearActiveSession();
+            setIsLoggedIn(false);
+            setLoginReason('minimized_timeout');
+            showToast(
+              state.settings.language === 'bn'
+                ? '🔒 অ্যাপটি ১৫ মিনিটের বেশি ব্যাকগ্রাউন্ডে থাকায় নিরাপত্তার স্বার্থে লগআউট করা হয়েছে!'
+                : '🔒 App was minimized for over 15 minutes and locked for security!'
+            );
+          }
+        }
+        minimizedTimeRef.current = null;
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (!minimizedTimeRef.current) {
+        minimizedTimeRef.current = Date.now();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      if (minimizedTimeRef.current && isLoggedIn) {
+        const hiddenDuration = Date.now() - minimizedTimeRef.current;
+        if (hiddenDuration >= MINIMIZE_TIMEOUT_MS) {
+          clearActiveSession();
+          setIsLoggedIn(false);
+          setLoginReason('minimized_timeout');
+        }
+      }
+      minimizedTimeRef.current = null;
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('focus', handleWindowFocus);
+
+    // Active background check ticker
+    const ticker = setInterval(() => {
+      if (isLoggedIn && document.hidden && minimizedTimeRef.current) {
+        const hiddenDuration = Date.now() - minimizedTimeRef.current;
+        if (hiddenDuration >= MINIMIZE_TIMEOUT_MS) {
+          clearActiveSession();
+          setIsLoggedIn(false);
+          setLoginReason('minimized_timeout');
+        }
+      }
+    }, 4000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('focus', handleWindowFocus);
+      clearInterval(ticker);
+    };
+  }, [isLoggedIn, state.settings.language]);
+
+  // Monitor idle user inactivity timeout (5 minutes)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    let lastActivityTime = Date.now();
+
+    const resetInactivityTimer = () => {
+      lastActivityTime = Date.now();
+    };
+
+    const userActivityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+    userActivityEvents.forEach(evt => {
+      window.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+
+    const inactivityCheckInterval = setInterval(() => {
+      if (Date.now() - lastActivityTime >= INACTIVITY_TIMEOUT_MS) {
+        clearActiveSession();
+        setIsLoggedIn(false);
+        setLoginReason('inactivity_timeout');
+      }
+    }, 10000);
+
+    return () => {
+      userActivityEvents.forEach(evt => {
+        window.removeEventListener(evt, resetInactivityTimer);
+      });
+      clearInterval(inactivityCheckInterval);
+    };
+  }, [isLoggedIn]);
 
   // Branch & Role change handlers
 
@@ -428,7 +598,6 @@ export default function App() {
         showToast('You are already an Admin 👑');
         return;
       }
-      refreshDynamicPin();
       setPinInput('');
       setPinError(false);
       setIsPinModalOpen(true);
@@ -444,7 +613,7 @@ export default function App() {
 
   const handleVerifyPinSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (pinInput === dynamicPin) {
+    if (pinInput === adminPin) {
       setState(prev => {
         const next = { ...prev, role: 'admin' as const };
         saveRole('admin');
@@ -453,14 +622,11 @@ export default function App() {
       setIsPinModalOpen(false);
       setPinInput('');
       setPinError(false);
-      refreshDynamicPin();
       showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
     } else {
-      // Auto-change PIN on incorrect attempt!
-      refreshDynamicPin();
       setPinInput('');
       setPinError(true);
-      showToast(state.settings.language === 'bn' ? '❌ ভুল পিন! নতুন পিন জেনারেট হয়েছে।' : '❌ Incorrect PIN! Generated new 5-digit PIN.');
+      showToast(state.settings.language === 'bn' ? '❌ ভুল পিন!' : '❌ Incorrect PIN!');
     }
   };
 
@@ -474,7 +640,7 @@ export default function App() {
       if (pinInput.length < 5) {
         const nextInput = pinInput + val;
         setPinInput(nextInput);
-        if (nextInput === dynamicPin) {
+        if (nextInput === adminPin) {
           setState(prev => {
             const next = { ...prev, role: 'admin' as const };
             saveRole('admin');
@@ -483,16 +649,11 @@ export default function App() {
           setIsPinModalOpen(false);
           setPinInput('');
           setPinError(false);
-          refreshDynamicPin();
           showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
         } else if (nextInput.length === 5) {
-          // Auto-change PIN after 5 digits entered incorrectly
-          setTimeout(() => {
-            refreshDynamicPin();
-            setPinInput('');
-            setPinError(true);
-            showToast(state.settings.language === 'bn' ? '❌ পিন মিলেনি! নতুন ৫ ডিজিটের পিন দেওয়া হলো।' : '❌ PIN mismatch! Generated new 5-digit PIN.');
-          }, 150);
+          setPinInput('');
+          setPinError(true);
+          showToast(state.settings.language === 'bn' ? '❌ পিন মিলেনি!' : '❌ PIN mismatch!');
         }
       }
     }
@@ -1048,6 +1209,7 @@ export default function App() {
     return (
       <LoginView
         state={state}
+        loginReason={loginReason}
         onLoginSuccess={handleLoginSuccess}
       />
     );
@@ -1401,7 +1563,7 @@ export default function App() {
       )}
 
       {/* ================= ADMIN PIN LOCK MODAL WITH DYNAMIC 5-DIGIT PIN ================= */}
-      {isPinModalOpen && (
+      {isPinModalOpen &&
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-[#031d36] border-2 border-amber-500/40 rounded-3xl w-full max-w-sm shadow-2xl shadow-black/90 overflow-hidden animate-in zoom-in-95 duration-200">
             
@@ -1459,29 +1621,10 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* 5-Digit Display Boxes */}
-                <div className="flex justify-center items-center gap-2 py-1">
-                  {dynamicPin.split('').map((digit, idx) => (
-                    <div 
-                      key={idx}
-                      className="w-10 h-12 bg-amber-500/20 border-2 border-amber-400 rounded-xl flex items-center justify-center text-amber-300 font-mono font-black text-2xl shadow-lg shadow-amber-950/60 transform hover:scale-105 transition-transform"
-                    >
-                      {digit}
-                    </div>
-                  ))}
-                </div>
-
-                <p className="text-[11px] text-gray-300 leading-tight font-medium">
-                  {state.settings.language === 'bn' 
-                    ? 'লগইন করতে উপরে প্রদর্শিত এই ৫ ডিজিটের পিন কোডটি টাইপ করুন। প্রতিটি চেষ্টার পর এটি নতুন একটি পিনে পরিবর্তিত হবে।' 
-                    : 'Type this 5-digit PIN code to log in. It automatically changes after every attempt.'}
-                </p>
-              </div>
-
-              {/* User 5-Digit PIN Input Display */}
-              <div className="space-y-1.5">
-                <p className="text-[10px] text-sky-400 font-bold uppercase tracking-wider text-left ml-1">
-                  {state.settings.language === 'bn' ? 'আপনার পিন কোড ইনপুট (৫ ডিজিট):' : 'Type 5-Digit PIN:'}
+              {/* PIN Input Display */}
+              <div className="space-y-4">
+                <p className="text-center text-gray-400 text-sm">
+                  {state.settings.language === 'bn' ? 'অ্যাডমিন প্যানেলে প্রবেশ করতে আপনার ৫ ডিজিটের পিনটি দিন:' : 'Enter your 5-digit PIN to access Admin Panel:'}
                 </p>
                 <div className="flex justify-center gap-2">
                   {[...Array(5)].map((_, i) => {
@@ -1508,8 +1651,8 @@ export default function App() {
               {pinError && (
                 <div className="text-xs text-rose-300 font-bold bg-rose-950/60 py-2 px-3 rounded-xl border border-rose-500/50 animate-in fade-in duration-200">
                   {state.settings.language === 'bn'
-                    ? '❌ পিন কোড মিলেনি! স্বয়ংক্রিয়ভাবে নতুন ৫ ডিজিটের পিন জেনারেট করা হয়েছে।'
-                    : '❌ Incorrect PIN! A new 5-digit PIN has been generated automatically.'}
+                    ? '❌ পিন কোড মিলেনি!'
+                    : '❌ Incorrect PIN!'}
                 </div>
               )}
 
@@ -1562,7 +1705,7 @@ export default function App() {
                     if (val.length <= 5) {
                       setPinInput(val);
                       setPinError(false);
-                      if (val === dynamicPin) {
+                      if (val === adminPin) {
                         setState(prev => {
                           const next = { ...prev, role: 'admin' as const };
                           saveRole('admin');
@@ -1571,19 +1714,11 @@ export default function App() {
                         setIsPinModalOpen(false);
                         setPinInput('');
                         setPinError(false);
-                        refreshDynamicPin();
                         showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
                       } else if (val.length === 5) {
-                        setTimeout(() => {
-                          refreshDynamicPin();
-                          setPinInput('');
-                          setPinError(true);
-                          showToast(
-                            state.settings.language === 'bn'
-                              ? '❌ পিন কোড মিলছে না! স্বয়ংক্রিয়ভাবে নতুন পিন জেনারেট করা হয়েছে।'
-                              : '❌ PIN mismatch! Generated new 5-digit PIN.'
-                          );
-                        }, 150);
+                        setPinInput('');
+                        setPinError(true);
+                        showToast(state.settings.language === 'bn' ? '❌ পিন কোড মিলেনি!' : '❌ PIN mismatch!');
                       }
                     }
                   }}
@@ -1685,7 +1820,14 @@ export default function App() {
                 type="button"
                 id="forced-staff-back-admin-btn"
                 onClick={() => {
-                  handleRoleChange('admin');
+                  console.log('Admin back button clicked');
+                  setState(prev => {
+                    const next = { ...prev, role: 'admin', currentUserId: 'admin' };
+                    saveRole('admin');
+                    saveCurrentUser('admin');
+                    return next;
+                  });
+                  setActiveTab('home');
                 }}
                 className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-slate-300 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
               >

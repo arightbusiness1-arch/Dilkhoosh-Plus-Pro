@@ -562,7 +562,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   
                   <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-gray-950 text-amber-300 border border-amber-500/30">
-                    {settings.loginPinType === 'custom' ? (settings.customAdminPin || settings.adminPin || '300723') : 'Dynamic Auto PIN'}
+                    {settings.customAdminPin || settings.adminPin || '300723'}
                   </span>
                 </div>
 
@@ -570,48 +570,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-gray-300 flex items-center gap-1">
                     <Key className="w-3 h-3 text-sky-400" />
-                    <span>{isBn ? 'লগইন পিন মোড নির্বাচন করুন:' : 'Select Login PIN Mode:'}</span>
+                    <span>{isBn ? 'লগইন পিন মোড:' : 'Login PIN Mode:'}</span>
                   </label>
-                  <div className="grid grid-cols-2 gap-2 p-1 bg-gray-950 rounded-xl border border-gray-800">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onUpdateSettings({ loginPinType: 'dynamic' });
-                        setPinFeedback({
-                          text: isBn ? 'ডায়নামিক অটো পিন মোড সক্রিয় হয়েছে! 🔄' : 'Dynamic Auto PIN mode activated! 🔄',
-                          type: 'success'
-                        });
-                        setTimeout(() => setPinFeedback(null), 3000);
-                      }}
-                      className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                        (settings.loginPinType || 'dynamic') === 'dynamic'
-                          ? 'bg-amber-600 text-gray-950 font-black shadow-md'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>{isBn ? 'অটো ডায়নামিক পিন' : 'Dynamic Auto PIN'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onUpdateSettings({ loginPinType: 'custom' });
-                        setPinFeedback({
-                          text: isBn ? 'কাস্টম নির্দিষ্ট পিন মোড সক্রিয় হয়েছে! 🔑' : 'Custom Fixed PIN mode activated! 🔑',
-                          type: 'success'
-                        });
-                        setTimeout(() => setPinFeedback(null), 3000);
-                      }}
-                      className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                        settings.loginPinType === 'custom'
-                          ? 'bg-sky-600 text-white font-black shadow-md'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      <Lock className="w-3 h-3" />
-                      <span>{isBn ? 'কাস্টম নিজস্ব পিন' : 'Custom Fixed PIN'}</span>
-                    </button>
+                  <div className="p-2 bg-gray-950 rounded-xl border border-gray-800 text-center">
+                    <span className="text-xs font-bold text-sky-400">
+                      {isBn ? 'কাস্টম পিন মোড সক্রিয়' : 'Custom PIN Mode Active'}
+                    </span>
                   </div>
                 </div>
 
