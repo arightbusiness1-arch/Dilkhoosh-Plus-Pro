@@ -135,7 +135,6 @@ export async function syncStateToCloud(state: AppState): Promise<boolean> {
       staffList: state.staffList || [],
       attendanceRecords: state.attendanceRecords || [],
       directives: state.directives || [],
-      tasks: state.tasks || [],
       settings: state.settings || {},
       hubData: state.hubData || { instructions: [], reminders: [], emergencies: [], ideas: [] },
       recycleBin: state.recycleBin || [],
@@ -167,7 +166,6 @@ export async function fetchStateFromCloud(): Promise<Partial<AppState> | null> {
         staffList: data.staffList,
         attendanceRecords: data.attendanceRecords,
         directives: data.directives,
-        tasks: data.tasks,
         settings: data.settings,
         hubData: data.hubData,
         recycleBin: data.recycleBin
@@ -198,7 +196,6 @@ export function subscribeToCloudUpdates(
             staffList: data.staffList,
             attendanceRecords: data.attendanceRecords,
             directives: data.directives,
-            tasks: data.tasks,
             settings: data.settings,
             hubData: data.hubData,
             recycleBin: data.recycleBin

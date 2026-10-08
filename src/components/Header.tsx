@@ -3,7 +3,8 @@ import {
   Bell,
   Settings,
   Smartphone,
-  Sparkles
+  Sun,
+  Moon
 } from 'lucide-react';
 import { AppState } from '../types';
 
@@ -14,9 +15,8 @@ interface HeaderProps {
   onOpenShortcuts?: () => void;
   onGoHome?: () => void;
   onOpenProfile?: () => void;
-  onOpenAiAssistant?: () => void;
   onSelectStaffUser?: (staffId: string) => void;
-  onLogout?: () => void;
+  onToggleTheme?: () => void;
   cloudStatus?: 'connected' | 'connecting' | 'offline';
 }
 
@@ -27,9 +27,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenShortcuts,
   onGoHome,
   onOpenProfile,
-  onOpenAiAssistant,
   onSelectStaffUser,
-  onLogout,
+  onToggleTheme,
   cloudStatus = 'connected'
 }) => {
   const todayStr = state.selectedDate;
@@ -144,6 +143,23 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </button>
+
+            {/* Quick Theme Switcher Button (Dark / Light) */}
+            {onToggleTheme && (
+              <button
+                type="button"
+                id="header-theme-toggle-btn"
+                onClick={onToggleTheme}
+                className="p-2 rounded-xl transition-all shadow-md active:scale-95 group cursor-pointer border bg-slate-900 text-amber-300 border-slate-800 hover:text-amber-200 hover:bg-slate-850"
+                title={state.settings.theme === 'light' ? 'ডার্ক মোড চালু করুন (Switch to Dark)' : 'সম্পূর্ণ লাইট মোড (Switch to Light)'}
+              >
+                {state.settings.theme === 'light' ? (
+                  <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 transition-transform group-hover:-rotate-12 group-hover:scale-110" />
+                ) : (
+                  <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 transition-transform group-hover:rotate-45 group-hover:scale-110" />
+                )}
+              </button>
+            )}
 
             {/* Quick Staff Switcher Dropdown */}
             {onSelectStaffUser && (

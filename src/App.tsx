@@ -41,19 +41,7 @@ import { ProfileDetailModal } from './components/ProfileDetailModal';
 import { HubManagementView } from './components/HubManagementView';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { DataCenterModal } from './components/DataCenterModal';
-import { AiAssistantModal } from './components/AiAssistantModal';
-import { LoginView } from './components/LoginView';
-import { 
-  isNewDevice, 
-  isFirstLoginToday, 
-  isSessionActive, 
-  recordSuccessfulLogin, 
-  clearActiveSession, 
-  MINIMIZE_TIMEOUT_MS, 
-  INACTIVITY_TIMEOUT_MS, 
-  LoginReason 
-} from './utils/session';
-import { CheckCircle2, Info, Lock, X, ShieldAlert, Eye, EyeOff, Bot, Sparkles, UserCheck, RefreshCw, ShieldCheck, Key } from 'lucide-react';
+import { CheckCircle2, Info, Lock, X, ShieldAlert, Eye, EyeOff, Sparkles, UserCheck, RefreshCw, ShieldCheck, Key } from 'lucide-react';
 
 // Helper to safely merge cloud data with local data without losing added items
 function mergeById<T extends { id: string }>(localArr?: T[], cloudArr?: T[], recycleBin: any[] = []): T[] {
@@ -90,23 +78,8 @@ export default function App() {
   const [state, setState] = useState<AppState>(() => loadInitialState());
   const [activeTab, setActiveTab] = useState<AppTab>('home');
 
-  // Security & Session Reason State
-  const [loginReason, setLoginReason] = useState<LoginReason>(() => {
-    if (isNewDevice()) return 'new_device';
-    if (isFirstLoginToday()) return 'first_login_today';
-    if (!isSessionActive()) return 'manual_logout';
-    return null;
-  });
-
-  // Login session state (Mandatory PIN enforcement on new device or first login of day)
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    if (isNewDevice() || !isSessionActive()) {
-      return false;
-    }
-    return true;
-  });
-
-  const minimizedTimeRef = useRef<number | null>(null);
+  // Login session state - Login Code System disabled per user request (Direct Access)
+  const isLoggedIn = true;
   
   const adminPin = state.settings.customAdminPin || state.settings.adminPin || '300723';
   // Online/Offline status & Firebase Cloud Storage Sync state
@@ -283,7 +256,6 @@ export default function App() {
   const [isRecycleBinOpen, setIsRecycleBinOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isDataCenterOpen, setIsDataCenterOpen] = useState(false);
-  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedProfileStaffId, setSelectedProfileStaffId] = useState<string | null>(null);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'settings' | 'info'>('settings');
@@ -357,7 +329,6 @@ export default function App() {
         setIsRecycleBinOpen(false);
         setIsShortcutsOpen(false);
         setIsProfileModalOpen(false);
-        setIsPinModalOpen(false);
         return;
       }
 
@@ -426,13 +397,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [state, isNewTaskOpen, isNewDirectiveOpen, isNewStaffOpen, isSettingsOpen]);
 
-  // Helper function to generate a random 5-digit security PIN
-  const generate5DigitPin = () => Math.floor(10000 + Math.random() * 90000).toString();
-
-  // Admin PIN verification state
-  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState(false);
+  // Admin PIN verification disabled per user request
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -462,201 +427,26 @@ export default function App() {
     });
   };
 
-  // Login & Logout session handlers
-  const handleLoginSuccess = (loginData: { role: 'admin' | 'staff'; staffId?: string }) => {
-    const nextRole = loginData.role;
-    const nextUser = loginData.staffId || (nextRole === 'admin' ? 'admin' : state.currentUserId);
-    
-    setState(prev => {
-      saveRole(nextRole);
-      saveCurrentUser(nextUser);
-      return {
-        ...prev,
-        role: nextRole,
-        currentUserId: nextUser
-      };
-    });
-
-    recordSuccessfulLogin();
-    setIsLoggedIn(true);
-    setLoginReason(null);
-    showToast(
-      state.settings.language === 'bn' 
-        ? `সফলভাবে ${nextRole === 'admin' ? 'এডমিন' : 'স্টাফ'} হিসেবে লগইন করেছেন 🎉` 
-        : `Successfully logged in as ${nextRole === 'admin' ? 'Admin' : 'Staff'} 🎉`
-    );
-  };
-
-  const handleLogout = () => {
-    clearActiveSession();
-    setIsLoggedIn(false);
-    setLoginReason('manual_logout');
-    showToast(state.settings.language === 'bn' ? 'সফলভাবে লগআউট করা হয়েছে 👋' : 'Successfully logged out 👋');
-  };
-
-  // Monitor app minimization / backgrounding and auto-logout if backgrounded for over 15 minutes
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        minimizedTimeRef.current = Date.now();
-      } else {
-        if (minimizedTimeRef.current && isLoggedIn) {
-          const hiddenDuration = Date.now() - minimizedTimeRef.current;
-          if (hiddenDuration >= MINIMIZE_TIMEOUT_MS) {
-            clearActiveSession();
-            setIsLoggedIn(false);
-            setLoginReason('minimized_timeout');
-            showToast(
-              state.settings.language === 'bn'
-                ? '🔒 অ্যাপটি ১৫ মিনিটের বেশি ব্যাকগ্রাউন্ডে থাকায় নিরাপত্তার স্বার্থে লগআউট করা হয়েছে!'
-                : '🔒 App was minimized for over 15 minutes and locked for security!'
-            );
-          }
-        }
-        minimizedTimeRef.current = null;
-      }
-    };
-
-    const handleWindowBlur = () => {
-      if (!minimizedTimeRef.current) {
-        minimizedTimeRef.current = Date.now();
-      }
-    };
-
-    const handleWindowFocus = () => {
-      if (minimizedTimeRef.current && isLoggedIn) {
-        const hiddenDuration = Date.now() - minimizedTimeRef.current;
-        if (hiddenDuration >= MINIMIZE_TIMEOUT_MS) {
-          clearActiveSession();
-          setIsLoggedIn(false);
-          setLoginReason('minimized_timeout');
-        }
-      }
-      minimizedTimeRef.current = null;
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('focus', handleWindowFocus);
-
-    // Active background check ticker
-    const ticker = setInterval(() => {
-      if (isLoggedIn && document.hidden && minimizedTimeRef.current) {
-        const hiddenDuration = Date.now() - minimizedTimeRef.current;
-        if (hiddenDuration >= MINIMIZE_TIMEOUT_MS) {
-          clearActiveSession();
-          setIsLoggedIn(false);
-          setLoginReason('minimized_timeout');
-        }
-      }
-    }, 4000);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
-      window.removeEventListener('focus', handleWindowFocus);
-      clearInterval(ticker);
-    };
-  }, [isLoggedIn, state.settings.language]);
-
-  // Monitor idle user inactivity timeout (5 minutes)
-  useEffect(() => {
-    if (!isLoggedIn) return;
-
-    let lastActivityTime = Date.now();
-
-    const resetInactivityTimer = () => {
-      lastActivityTime = Date.now();
-    };
-
-    const userActivityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
-    userActivityEvents.forEach(evt => {
-      window.addEventListener(evt, resetInactivityTimer, { passive: true });
-    });
-
-    const inactivityCheckInterval = setInterval(() => {
-      if (Date.now() - lastActivityTime >= INACTIVITY_TIMEOUT_MS) {
-        clearActiveSession();
-        setIsLoggedIn(false);
-        setLoginReason('inactivity_timeout');
-      }
-    }, 10000);
-
-    return () => {
-      userActivityEvents.forEach(evt => {
-        window.removeEventListener(evt, resetInactivityTimer);
-      });
-      clearInterval(inactivityCheckInterval);
-    };
-  }, [isLoggedIn]);
-
-  // Branch & Role change handlers
-
+  // Branch & Role change handlers (Direct Switching, Login PIN system bypassed)
   const handleRoleChange = (role: 'admin' | 'staff') => {
-    if (role === 'admin') {
-      if (state.role === 'admin') {
-        showToast('You are already an Admin 👑');
-        return;
-      }
-      setPinInput('');
-      setPinError(false);
-      setIsPinModalOpen(true);
-    } else {
-      setState(prev => {
-        const next = { ...prev, role };
-        saveRole(role);
-        return next;
-      });
-      showToast('Switched to: Staff Portal 🧑‍💼');
+    if (role === state.role) {
+      showToast(
+        role === 'admin' 
+          ? (state.settings.language === 'bn' ? 'আপনি বর্তমানে এডমিন প্যানেলে আছেন 👑' : 'You are already an Admin 👑')
+          : (state.settings.language === 'bn' ? 'আপনি বর্তমানে স্টাফ পোর্টালে আছেন 🧑‍💼' : 'You are already in Staff Portal 🧑‍💼')
+      );
+      return;
     }
-  };
-
-  const handleVerifyPinSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (pinInput === adminPin) {
-      setState(prev => {
-        const next = { ...prev, role: 'admin' as const };
-        saveRole('admin');
-        return next;
-      });
-      setIsPinModalOpen(false);
-      setPinInput('');
-      setPinError(false);
-      showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
-    } else {
-      setPinInput('');
-      setPinError(true);
-      showToast(state.settings.language === 'bn' ? '❌ ভুল পিন!' : '❌ Incorrect PIN!');
-    }
-  };
-
-  const handleKeypadPress = (val: string) => {
-    setPinError(false);
-    if (val === 'clear') {
-      setPinInput('');
-    } else if (val === 'backspace') {
-      setPinInput(prev => prev.slice(0, -1));
-    } else {
-      if (pinInput.length < 5) {
-        const nextInput = pinInput + val;
-        setPinInput(nextInput);
-        if (nextInput === adminPin) {
-          setState(prev => {
-            const next = { ...prev, role: 'admin' as const };
-            saveRole('admin');
-            return next;
-          });
-          setIsPinModalOpen(false);
-          setPinInput('');
-          setPinError(false);
-          showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
-        } else if (nextInput.length === 5) {
-          setPinInput('');
-          setPinError(true);
-          showToast(state.settings.language === 'bn' ? '❌ পিন মিলেনি!' : '❌ PIN mismatch!');
-        }
-      }
-    }
+    setState(prev => {
+      const next = { ...prev, role };
+      saveRole(role);
+      return next;
+    });
+    showToast(
+      role === 'admin'
+        ? (state.settings.language === 'bn' ? 'এডমিন প্যানেলে সফলভাবে প্রবেশ করেছেন 👑' : 'Switched to: Admin Panel 👑')
+        : (state.settings.language === 'bn' ? 'স্টাফ পোর্টালে পরিবর্তন করা হয়েছে 🧑‍💼' : 'Switched to: Staff Portal 🧑‍💼')
+    );
   };
 
   const handleSelectStaffUser = (staffId: string) => {
@@ -1205,21 +995,11 @@ export default function App() {
     state.staffList.filter(s => s.isActive).length - state.attendanceRecords.filter(r => r.date === state.selectedDate).length
   );
 
-  if (!isLoggedIn) {
-    return (
-      <LoginView
-        state={state}
-        loginReason={loginReason}
-        onLoginSuccess={handleLoginSuccess}
-      />
-    );
-  }
-
   return (
     <div className={`min-h-screen flex flex-col selection:bg-sky-500 selection:text-white transition-colors duration-200 ${
       state.settings.theme === 'dark' 
         ? 'dark bg-[#031b33] bg-gradient-to-b from-[#021528] via-[#041f3b] to-[#021324] text-slate-100' 
-        : 'light bg-sky-50 text-gray-900'
+        : 'light bg-slate-50 text-slate-900'
     }`}>
       
       {/* Top Header */}
@@ -1231,9 +1011,11 @@ export default function App() {
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
         onGoHome={() => setActiveTab('home')}
         onOpenProfile={() => handleOpenStaffProfile(state.currentUserId)}
-        onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
         onSelectStaffUser={handleSelectStaffUser}
-        onLogout={handleLogout}
+        onToggleTheme={() => {
+          const nextTheme = state.settings.theme === 'light' ? 'dark' : 'light';
+          handleUpdateSettings({ theme: nextTheme });
+        }}
       />
 
       {/* Dynamic Role & Mode Switcher Bar (স্টাফ ও এডমিন প্যানেল সুইচার) - Only displayed when activeTab is 'menu' */}
@@ -1313,6 +1095,7 @@ export default function App() {
         pendingTasksCount={pendingTasksCount}
         urgentDirectivesCount={urgentDirectivesCount}
         unmarkedAttendanceCount={unmarkedAttendanceCount}
+        theme={state.settings.theme}
       />
 
       {/* Main Content Area */}
@@ -1366,7 +1149,6 @@ export default function App() {
             showToast={showToast}
             onNavigateTab={setActiveTab}
             onUpdateHubData={handleUpdateHubData}
-            onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
           />
         )}
 
@@ -1400,8 +1182,6 @@ export default function App() {
             onOpenRecycleBin={() => setIsRecycleBinOpen(true)}
             onOpenDataCenter={() => setIsDataCenterOpen(true)}
             onOpenStaffProfile={handleOpenStaffProfile}
-            onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
-            onLogout={handleLogout}
           />
         )}
 
@@ -1525,33 +1305,6 @@ export default function App() {
         showToast={showToast}
       />
 
-      {/* Dilkhoosh AI Smart Assistant Modal */}
-      <AiAssistantModal
-        isOpen={isAiAssistantOpen}
-        onClose={() => setIsAiAssistantOpen(false)}
-        state={state}
-      />
-
-      {/* Floating AI Assistant Quick Trigger (Bottom-Right floating pill) */}
-      <div className="fixed bottom-20 sm:bottom-6 right-3 sm:right-6 z-40">
-        <button
-          type="button"
-          id="floating-ai-assistant-btn"
-          onClick={() => setIsAiAssistantOpen(true)}
-          className="p-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white rounded-full shadow-2xl shadow-purple-950/80 border border-purple-300/40 hover:border-purple-200 transition-all hover:scale-105 active:scale-95 group flex items-center gap-2 cursor-pointer"
-          title={state.settings.language === 'bn' ? 'দিলখুশ এআই সহকারী - প্রশ্ন করুন' : 'Dilkhoosh AI Assistant - Ask Question'}
-        >
-          <div className="relative">
-            <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400"></span>
-          </div>
-          <span className="text-xs font-black hidden sm:inline-block pr-1 tracking-wide">
-            {state.settings.language === 'bn' ? 'এআই সহকারী' : 'AI Assistant'}
-          </span>
-        </button>
-      </div>
-
       {/* Floating Toast Notification */}
       {toastMessage && (
         <div className="fixed top-20 sm:top-24 right-4 z-50 animate-in fade-in slide-in-from-top-4 duration-200">
@@ -1562,181 +1315,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ================= ADMIN PIN LOCK MODAL WITH DYNAMIC 5-DIGIT PIN ================= */}
-      {isPinModalOpen &&
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#031d36] border-2 border-amber-500/40 rounded-3xl w-full max-w-sm shadow-2xl shadow-black/90 overflow-hidden animate-in zoom-in-95 duration-200">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-800 bg-[#021528]">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-white flex items-center gap-1.5">
-                    <span>👑 {state.settings.language === 'bn' ? 'এডমিন অ্যাক্সেস সিকিউরিটি' : 'Admin Security Access'}</span>
-                  </h3>
-                  <p className="text-[9px] text-amber-400/90 uppercase tracking-widest font-bold">
-                    {state.settings.language === 'bn' ? '৫ ডিজিটের ডাইনামিক পিন সিস্টেম' : '5-Digit Dynamic PIN System'}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPinModalOpen(false);
-                  setPinInput('');
-                  setPinError(false);
-                }}
-                className="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-gray-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="p-5 space-y-4 text-center">
-              
-              {/* Dynamic 5-Digit PIN Display Card */}
-              <div className="bg-gradient-to-b from-gray-950 via-[#021528] to-gray-950 p-4 rounded-2xl border border-amber-500/40 shadow-inner space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    {state.settings.language === 'bn' ? 'নিরাপত্তা পিন কোড:' : 'Security PIN Code:'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      refreshDynamicPin();
-                      setPinInput('');
-                      setPinError(false);
-                      showToast(state.settings.language === 'bn' ? 'নতুন ৫ ডিজিটের পিন জেনারেট হয়েছে 🔄' : 'Generated new 5-digit PIN 🔄');
-                    }}
-                    className="p-1 px-2.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
-                    title="Generate New PIN"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>{state.settings.language === 'bn' ? 'নতুন পিন' : 'Refresh'}</span>
-                  </button>
-                </div>
-
-              {/* PIN Input Display */}
-              <div className="space-y-4">
-                <p className="text-center text-gray-400 text-sm">
-                  {state.settings.language === 'bn' ? 'অ্যাডমিন প্যানেলে প্রবেশ করতে আপনার ৫ ডিজিটের পিনটি দিন:' : 'Enter your 5-digit PIN to access Admin Panel:'}
-                </p>
-                <div className="flex justify-center gap-2">
-                  {[...Array(5)].map((_, i) => {
-                    const hasValue = pinInput.length > i;
-                    const char = hasValue ? pinInput[i] : '';
-                    return (
-                      <div
-                        key={i}
-                        className={`w-11 h-12 rounded-xl flex items-center justify-center font-mono font-black text-xl border-2 transition-all ${
-                          pinError
-                            ? 'bg-rose-950/40 border-rose-500 text-rose-400 animate-bounce'
-                            : hasValue
-                              ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-md shadow-emerald-950/50'
-                              : 'bg-gray-950 border-gray-800 text-gray-600'
-                        }`}
-                      >
-                        {char || '•'}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {pinError && (
-                <div className="text-xs text-rose-300 font-bold bg-rose-950/60 py-2 px-3 rounded-xl border border-rose-500/50 animate-in fade-in duration-200">
-                  {state.settings.language === 'bn'
-                    ? '❌ পিন কোড মিলেনি!'
-                    : '❌ Incorrect PIN!'}
-                </div>
-              )}
-
-              {/* Numeric Pad */}
-              <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto pt-1">
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(num => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => handleKeypadPress(num)}
-                    className="h-11 bg-gray-950 hover:bg-gray-850 active:bg-gray-800 text-white font-bold text-base rounded-xl border border-gray-800 active:scale-95 transition-all shadow-sm"
-                  >
-                    {num}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => handleKeypadPress('clear')}
-                  className="h-11 bg-rose-950/40 hover:bg-rose-900/50 text-rose-400 font-black text-xs rounded-xl border border-rose-800/50 active:scale-95 transition-all uppercase"
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleKeypadPress('0')}
-                  className="h-11 bg-gray-950 hover:bg-gray-850 active:bg-gray-800 text-white font-bold text-base rounded-xl border border-gray-800 active:scale-95 transition-all shadow-sm"
-                >
-                  0
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleKeypadPress('backspace')}
-                  className="h-11 bg-gray-950 hover:bg-gray-850 active:bg-gray-800 text-gray-300 font-bold text-xs rounded-xl border border-gray-800 active:scale-95 transition-all"
-                >
-                  ⌫
-                </button>
-              </div>
-
-              {/* Direct Keyboard Entry Form */}
-              <form onSubmit={handleVerifyPinSubmit} className="pt-2 border-t border-gray-800/80 space-y-2">
-                <input
-                  type="password"
-                  pattern="[0-9]*"
-                  inputMode="numeric"
-                  maxLength={5}
-                  placeholder={state.settings.language === 'bn' ? 'এখানে ৫ ডিজিট পিন টাইপ করুন...' : 'Type 5-digit PIN here...'}
-                  value={pinInput}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9]/g, '');
-                    if (val.length <= 5) {
-                      setPinInput(val);
-                      setPinError(false);
-                      if (val === adminPin) {
-                        setState(prev => {
-                          const next = { ...prev, role: 'admin' as const };
-                          saveRole('admin');
-                          return next;
-                        });
-                        setIsPinModalOpen(false);
-                        setPinInput('');
-                        setPinError(false);
-                        showToast(state.settings.language === 'bn' ? 'এডমিন হিসেবে সফলভাবে লগইন করেছেন 👑' : 'Welcome Administrator 👑');
-                      } else if (val.length === 5) {
-                        setPinInput('');
-                        setPinError(true);
-                        showToast(state.settings.language === 'bn' ? '❌ পিন কোড মিলেনি!' : '❌ PIN mismatch!');
-                      }
-                    }
-                  }}
-                  className="w-full text-center bg-gray-950 text-emerald-400 font-mono font-bold text-sm py-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-amber-400 transition-colors placeholder:text-gray-600 placeholder:font-sans"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-950/50 uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>{state.settings.language === 'bn' ? 'লগইন নিশ্চিত করুন' : 'Confirm & Login'}</span>
-                </button>
-              </form>
-
-            </div>
-
-          </div>
-        </div>
-      )}
+      {/* Login PIN Lock Modal removed per user request */}
 
       {/* Forced Staff Selection Overlay */}
       {state.role === 'staff' && (state.currentUserId === 'admin' || state.currentUserId === '' || !state.staffList.some(s => s.id === state.currentUserId && s.isActive && s.id !== 'admin')) && (
@@ -1837,7 +1416,6 @@ export default function App() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

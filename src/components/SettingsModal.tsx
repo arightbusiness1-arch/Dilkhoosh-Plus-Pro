@@ -215,10 +215,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       title: 'Central Hub, Compact 2-Column Layout & Profile Section',
       date: 'Aug 17, 2026',
       changes: [
-        'Central Hub tab in bottom navigation with 6 core tools',
-        'Compact 2-column card grid layout with rich color grading & emojis',
+        'Central Hub tab in bottom navigation with core tools',
+        'Compact card grid layout with rich color grading & emojis',
         'Top Profile section in Menu & Pinned Settings option',
-        'Special Instructions, Reminder, Own Ideas 💡, Emergency, Own action & Ai assistant'
+        'Special Instructions, Reminder, Own Ideas 💡, Emergency & Own action'
       ]
     },
     {
@@ -555,28 +555,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <p className="text-xs font-black text-white">
                         {isBn ? 'লগইন সিকিউরিটি ও পিন সেটআপ' : 'Login Security & PIN Setup'}
                       </p>
-                      <p className="text-[10px] text-gray-400">
-                        {isBn ? 'লগইন পিন টাইপ, কাস্টম পিন ও পিন রিকভারি সেটআপ করুন' : 'Configure PIN mode, custom PIN, and security recovery'}
+                      <p className="text-[10px] text-emerald-400 font-semibold">
+                        {isBn ? 'লগ ইন কোড সিস্টেমটি আপাতত বাদ রয়েছে (সরাসরি ড্যাশবোর্ড প্রবেশ সক্রিয়)' : 'Login code system is currently disabled (Direct dashboard access active)'}
                       </p>
                     </div>
                   </div>
                   
-                  <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-gray-950 text-amber-300 border border-amber-500/30">
-                    {settings.customAdminPin || settings.adminPin || '300723'}
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    {isBn ? 'কোড ছাড়াই প্রবেশ' : 'Direct Access'}
                   </span>
                 </div>
 
-                {/* PIN Mode Selection */}
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-gray-300 flex items-center gap-1">
-                    <Key className="w-3 h-3 text-sky-400" />
-                    <span>{isBn ? 'লগইন পিন মোড:' : 'Login PIN Mode:'}</span>
-                  </label>
-                  <div className="p-2 bg-gray-950 rounded-xl border border-gray-800 text-center">
-                    <span className="text-xs font-bold text-sky-400">
-                      {isBn ? 'কাস্টম পিন মোড সক্রিয়' : 'Custom PIN Mode Active'}
-                    </span>
-                  </div>
+                {/* PIN Mode Status Notice */}
+                <div className="p-2.5 bg-emerald-950/30 rounded-xl border border-emerald-500/30 text-center">
+                  <span className="text-xs font-bold text-emerald-400">
+                    {isBn ? '✅ লগ ইন কোড ছাড়াই সরাসরি অ্যাপে প্রবেশ করতে পারবেন' : '✅ Direct application access without login code is active'}
+                  </span>
                 </div>
 
                 {/* Custom PIN Field (Active when custom mode selected) */}

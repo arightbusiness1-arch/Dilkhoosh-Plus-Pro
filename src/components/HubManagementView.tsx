@@ -38,6 +38,7 @@ export const HubManagementView: React.FC<HubManagementViewProps> = ({
   onNavigateTab
 }) => {
   const isBn = state.settings.language === 'bn';
+  const isDark = state.settings.theme === 'dark';
   const [activeTab, setActiveTab] = useState<ManagementTab>('instructions');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -505,26 +506,34 @@ export const HubManagementView: React.FC<HubManagementViewProps> = ({
       )}
 
       {/* Header and Back Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-900 border border-indigo-900/40 p-2.5 sm:p-3.5 rounded-xl shadow-lg">
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 sm:p-3.5 rounded-xl shadow-lg border ${
+        isDark ? 'bg-gray-900 border-indigo-900/40 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm'
+      }`}>
         <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => onNavigateTab('menu')}
-            className="px-2 py-1 bg-gray-950 border border-gray-800 hover:border-indigo-500/40 text-sky-300 hover:text-white rounded-lg transition-all flex items-center gap-1 text-xs font-bold shrink-0"
+            className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1 text-xs font-bold shrink-0 border ${
+              isDark 
+                ? 'bg-gray-950 border-gray-800 hover:border-indigo-500/40 text-sky-300 hover:text-white' 
+                : 'bg-slate-100 border-slate-200 hover:border-indigo-400 text-indigo-700 hover:text-indigo-900'
+            }`}
             title={isBn ? 'মেনুতে ফিরুন' : 'Back to Menu'}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>{isBn ? 'মেনু' : 'Menu'}</span>
           </button>
           <div>
-            <h2 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-indigo-400" />
+            <h2 className={`text-sm sm:text-base font-black flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <Layers className="w-4 h-4 text-indigo-500" />
               <span>{isBn ? 'হাব কার্যক্রম ব্যবস্থাপনা' : 'Hub Activity Management'}</span>
-              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 uppercase tracking-wider">
+              <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider border ${
+                isDark ? 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30' : 'bg-indigo-100 text-indigo-800 border-indigo-200'
+              }`}>
                 Admin
               </span>
             </h2>
-            <p className="text-[11px] text-gray-400 mt-0.5">
+            <p className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
               {isBn ? 'স্পেশাল নির্দেশাবলী, রিমাইন্ডার এবং জরুরী কন্টাক্ট কন্ট্রোল প্যানেল' : 'Control special instructions, active alerts, and emergency contact registries'}
             </p>
           </div>
@@ -532,7 +541,9 @@ export const HubManagementView: React.FC<HubManagementViewProps> = ({
       </div>
 
       {/* Inner Navigation Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-gray-950 p-1.5 rounded-xl border border-gray-800/80">
+      <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 p-1.5 rounded-xl border ${
+        isDark ? 'bg-gray-950 border-gray-800/80' : 'bg-slate-100 border-slate-200'
+      }`}>
         <button
           type="button"
           onClick={() => {
@@ -542,7 +553,7 @@ export const HubManagementView: React.FC<HubManagementViewProps> = ({
           className={`py-3 rounded-lg text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
             activeTab === 'instructions'
               ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-gray-900'
+              : isDark ? 'text-gray-400 hover:text-white hover:bg-gray-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -558,7 +569,7 @@ export const HubManagementView: React.FC<HubManagementViewProps> = ({
           className={`py-3 rounded-lg text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
             activeTab === 'reminders'
               ? 'bg-amber-600 text-white shadow-lg shadow-amber-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-gray-900'
+              : isDark ? 'text-gray-400 hover:text-white hover:bg-gray-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
           }`}
         >
           <Clock className="w-4 h-4" />
@@ -574,7 +585,7 @@ export const HubManagementView: React.FC<HubManagementViewProps> = ({
           className={`py-3 rounded-lg text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
             activeTab === 'emergencies'
               ? 'bg-rose-600 text-white shadow-lg shadow-rose-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-gray-900'
+              : isDark ? 'text-gray-400 hover:text-white hover:bg-gray-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
           }`}
         >
           <EmergencyIcon className="w-4 h-4 object-contain shrink-0" />
@@ -590,7 +601,7 @@ export const HubManagementView: React.FC<HubManagementViewProps> = ({
           className={`py-3 rounded-lg text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
             activeTab === 'ideas'
               ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-gray-900'
+              : isDark ? 'text-gray-400 hover:text-white hover:bg-gray-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
           }`}
         >
           <Lightbulb className="w-4 h-4" />
@@ -606,7 +617,7 @@ export const HubManagementView: React.FC<HubManagementViewProps> = ({
           className={`py-3 rounded-lg text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 col-span-2 sm:col-span-1 ${
             activeTab === 'actions'
               ? 'bg-sky-600 text-white shadow-lg shadow-sky-950/60'
-              : 'text-gray-400 hover:text-white hover:bg-gray-900'
+              : isDark ? 'text-gray-400 hover:text-white hover:bg-gray-900' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
           }`}
         >
           <Wrench className="w-4 h-4" />

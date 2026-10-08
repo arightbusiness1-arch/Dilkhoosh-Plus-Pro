@@ -15,7 +15,7 @@ const STORAGE_KEYS = {
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'dark',
+  theme: 'light',
   language: 'en',
   notificationMode: 'vibration',
   version: '1.4',
@@ -124,6 +124,10 @@ export const loadInitialState = (): AppState => {
         parsedSettings = { ...DEFAULT_SETTINGS, ...loaded };
         parsedSettings.version = '1.4';
         parsedSettings.developerCredit = 'Developed By Zubayer Ahmedr';
+        // Ensure user requested light theme is activated
+        if (!loaded.theme || loaded.theme === 'dark') {
+          parsedSettings.theme = 'light';
+        }
         saveSettings(parsedSettings);
       } catch (e) {
         parsedSettings = DEFAULT_SETTINGS;

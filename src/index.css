@@ -60,35 +60,363 @@
 }
 
 
-/* PROFESSIONAL LIGHT THEME STYLING */
-.light, .light body {
-  background-color: #f8fafc !important; /* Soft Slate 50 background */
-  color: #0f172a !important; /* Slate 900 text */
-  font-weight: 450 !important;
+/* =========================================================================
+   COMPREHENSIVE PROFESSIONAL LIGHT MODE (সম্পূর্ণ লাইট মোড)
+   ========================================================================= */
+
+html.light, 
+body.light, 
+.light {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  color-scheme: light !important;
 }
 
-/* Professional Cards & Containers */
-.light .card, 
-.light .bg-slate-900, 
-.light .bg-gray-900,
-.light .bg-gray-950,
-.light .bg-slate-950 {
-  background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important; /* Slate 200 border */
+.light, 
+.light body {
+  background: #f8fafc !important;
+}
+
+/* Base App Page Container in Light Mode */
+.light .min-h-screen {
+  background-color: #f8fafc !important;
+  background-image: none !important;
   color: #0f172a !important;
+}
+
+/* Clean High-Contrast Headers & Navbars */
+.light header {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Clean up headers/navs */
-.light header, .light nav {
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+.light header h1,
+.light header h1 span:first-child,
+.light header .text-white {
+  color: #0f172a !important;
 }
 
-/* High-contrast text specifically for readability without destroying UI */
-.light h1, .light h2, .light h3, .light h4, .light h5, .light h6, 
-.light p, .light span {
-  color: #1e293b !important; /* Slate 800 */
+.light header p,
+.light header .text-gray-300,
+.light header .text-slate-400 {
+  color: #475569 !important;
+}
+
+.light header button,
+.light header select {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+.light header select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Workspace Role Switcher Bar */
+.light .bg-\[\#031d36\],
+.light [class*="bg-[#031d36]"] {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.light .bg-\[\#031d36\] span {
+  color: #334155 !important;
+}
+
+/* Desktop and Mobile Navigation Bar */
+.light .hidden.md\:block.bg-\[\#021528\]\/95,
+.light [class*="bg-[#021528]"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light #fixed-bottom-navigation-bar {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-top: 1px solid #e2e8f0 !important;
+  box-shadow: 0 -4px 20px -2px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* BottomNav Inactive Tab Buttons in Light Mode */
+.light nav button [class*="bg-emerald-950"],
+.light nav button [class*="bg-sky-950"],
+.light nav button [class*="bg-purple-950"],
+.light nav button [class*="bg-amber-950"],
+.light nav button [class*="bg-rose-950"],
+.light nav button .text-emerald-400,
+.light nav button .text-sky-400,
+.light nav button .text-purple-400,
+.light nav button .text-amber-400,
+.light nav button .text-rose-400 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+.light nav button span.text-gray-400 {
+  color: #64748b !important;
+}
+
+/* All Cards, Panels, Modules, Containers */
+.light .card,
+.light [class*="bg-slate-900"],
+.light [class*="bg-gray-900"],
+.light [class*="bg-slate-850"],
+.light [class*="bg-gray-850"],
+.light [class*="bg-[#021528]"],
+.light [class*="bg-[#03182e]"],
+.light [class*="bg-[#041c38]"],
+.light [class*="bg-[#0B132B]"],
+.light [class*="bg-[#070D1F]"],
+.light [class*="bg-[#010a14]"],
+.light [class*="bg-[#010e1c]"],
+.light [class*="bg-[#010c17]"],
+.light [class*="bg-[#010f1e]"],
+.light [class*="bg-[#041a30]"],
+.light [class*="bg-[#010912]"],
+.light [class*="bg-[#031c38]"],
+.light [class*="bg-[#072a54]"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Inner Nested Stat Boxes & Badges */
+.light [class*="bg-slate-950"],
+.light [class*="bg-gray-950"],
+.light [class*="bg-slate-800"],
+.light [class*="bg-gray-800"],
+.light [class*="bg-[#010d1a]"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Dark Borders Universal Replacement */
+.light [class*="border-gray-800"],
+.light [class*="border-gray-850"],
+.light [class*="border-gray-900"],
+.light [class*="border-slate-800"],
+.light [class*="border-slate-850"],
+.light [class*="border-slate-900"],
+.light [class*="border-sky-900"],
+.light [class*="border-sky-950"],
+.light [class*="border-emerald-900"],
+.light [class*="border-emerald-950"],
+.light [class*="border-gray-700"],
+.light [class*="border-slate-700"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Form Inputs, Textareas & Selects */
+.light input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="submit"]):not([type="button"]),
+.light textarea,
+.light select {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.light input:focus,
+.light textarea:focus,
+.light select:focus {
+  border-color: #0284c7 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* Modals & Backdrop Overlays */
+.light .fixed.inset-0.bg-black\/80,
+.light .fixed.inset-0.bg-black\/85,
+.light .fixed.inset-0.bg-black\/75,
+.light .fixed.inset-0.bg-black\/70,
+.light .fixed.inset-0.bg-black\/90,
+.light [class*="bg-black/"] {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.light .fixed.inset-0 > div[class*="bg-"],
+.light .fixed > div[class*="bg-gray-"],
+.light .fixed > div[class*="bg-slate-"],
+.light .fixed > div[class*="bg-[#"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.light .fixed [class*="border-b"],
+.light .fixed [class*="border-t"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Tables in Light Mode */
+.light table {
+  border-color: #e2e8f0 !important;
+}
+.light th {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+.light td {
+  border-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+.light tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* Typography Contrast in Light Mode */
+.light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+  color: #0f172a !important;
+}
+
+.light p {
+  color: #334155 !important;
+}
+
+/* Card titles and menu buttons text in Light Mode */
+.light button h3,
+.light button h4,
+.light div h3,
+.light div h4 {
+  color: #0f172a !important;
+}
+
+.light .text-white:not(button.bg-emerald-600):not(button.bg-sky-600):not(button.bg-rose-600):not(button.bg-amber-500):not(button.bg-purple-600):not(button.bg-indigo-600):not([class*="bg-emerald-600"] *):not([class*="bg-emerald-700"] *):not([class*="bg-sky-500"] *):not([class*="bg-sky-600"] *):not([class*="bg-rose-500"] *):not([class*="bg-rose-600"] *):not([class*="bg-purple-600"] *):not([class*="bg-indigo-600"] *):not(.badge):not([class*="rounded-full text-white"]) {
+  color: #0f172a !important;
+}
+
+.light .text-gray-400,
+.light .text-gray-450,
+.light .text-gray-300,
+.light .text-slate-400,
+.light .text-slate-300 {
+  color: #64748b !important;
+}
+
+/* Universal Background Gradient Reset for Light Mode */
+.light [class*="from-indigo-950"],
+.light [class*="from-amber-950"],
+.light [class*="from-emerald-950"]:not([id="motivational-quote-wrapper"]),
+.light [class*="from-rose-950"],
+.light [class*="from-sky-950"],
+.light [class*="from-purple-950"],
+.light [class*="from-cyan-950"],
+.light [class*="from-slate-950"],
+.light [class*="from-gray-900"],
+.light [class*="from-gray-950"] {
+  background-image: none !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Preserve bright button colors and their white text */
+.light button[class*="bg-emerald"],
+.light button[class*="bg-sky"],
+.light button[class*="bg-rose"],
+.light button[class*="bg-amber"],
+.light button[class*="bg-purple"],
+.light button[class*="bg-blue"],
+.light button[class*="bg-red"],
+.light button[class*="bg-indigo"],
+.light .bg-emerald-600,
+.light .bg-emerald-700,
+.light .bg-sky-500,
+.light .bg-sky-600,
+.light .bg-rose-500,
+.light .bg-rose-600,
+.light .bg-purple-600,
+.light [class*="activeGradient"] {
+  color: #ffffff !important;
+}
+
+.light button[class*="bg-emerald"] *,
+.light button[class*="bg-sky"] *,
+.light button[class*="bg-rose"] *,
+.light button[class*="bg-amber"] *,
+.light button[class*="bg-purple"] *,
+.light button[class*="bg-blue"] *,
+.light button[class*="bg-red"] *,
+.light .bg-emerald-600 *,
+.light .bg-emerald-700 *,
+.light .bg-sky-500 *,
+.light .bg-rose-600 *,
+.light .bg-purple-600 * {
+  color: #ffffff !important;
+}
+
+/* Light Mode Filter Pills & Buttons */
+.light [id^="filter-status-"],
+.light [id^="task-tab-"],
+.light [id^="report-tab-"] {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+/* Light Mode Motivational Quote Banner */
+.light #motivational-quote-wrapper {
+  background: linear-gradient(to right, #ecfdf5, #f8fafc, #f0fdf4) !important;
+  border-color: #a7f3d0 !important;
+  color: #064e3b !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+.light #motivational-quote-wrapper p,
+.light #motivational-quote-wrapper span {
+  color: #065f46 !important;
+}
+.light #motivational-quote-wrapper h2,
+.light #motivational-quote-wrapper h3,
+.light #motivational-quote-wrapper h4 {
+  color: #064e3b !important;
+}
+
+/* Light Mode Admin Overview Banner */
+.light .bg-gradient-to-r.from-sky-900\/40,
+.light [class*="from-sky-900/40"] {
+  background: linear-gradient(to right, #eff6ff, #f8fafc, #faf5ff) !important;
+  border-color: #bfdbfe !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+.light [class*="from-sky-900/40"] h2,
+.light [class*="from-sky-900/40"] p {
+  color: #1e293b !important;
+}
+
+/* Back Button in Light Mode */
+.light [class*="bg-[#041c38]"] {
+  background-color: #f0f9ff !important;
+  border-color: #bae6fd !important;
+  color: #0369a1 !important;
+}
+.light [class*="bg-[#041c38]"]:hover {
+  background-color: #e0f2fe !important;
+  color: #0284c7 !important;
+}
+
+/* Scrollbar in Light Mode */
+.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 

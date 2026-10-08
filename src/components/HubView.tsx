@@ -6,7 +6,6 @@ import {
   Lightbulb, 
   AlertTriangle, 
   CheckCircle2, 
-  Bot, 
   ShieldCheck,
   Plus,
   Send,
@@ -25,18 +24,17 @@ import { AppState, HubData, HubIdea, HubReminder, HubActionItem } from '../types
 import { EmergencyIcon } from './EmergencyIcon';
 import { NewDirectiveModal } from './NewDirectiveModal';
 import { ClockTimePicker } from './ClockTimePicker';
-import { AiAssistantModal } from './AiAssistantModal';
 
 interface HubViewProps {
   state: AppState;
   showToast: (msg: string) => void;
   onNavigateTab: (tab: any) => void;
   onUpdateHubData?: (newHubData: HubData) => void;
-  onOpenAiAssistant?: () => void;
 }
 
-export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTab, onUpdateHubData, onOpenAiAssistant }) => {
+export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTab, onUpdateHubData }) => {
   const isBn = state.settings.language === 'bn';
+  const isDark = state.settings.theme === 'dark';
   
   const handleUpdateInstructionStatus = (instId: string, status: any) => {
     if (!onUpdateHubData) return;
@@ -68,9 +66,6 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
   const [editingIdeaText, setEditingIdeaText] = useState('');
   const [isIdeasCollapsed, setIsIdeasCollapsed] = useState(false);
   const [isIdeasExpandedView, setIsIdeasExpandedView] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [showAddInstruction, setShowAddInstruction] = useState(false);
@@ -280,36 +275,31 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
     }
   };
 
-  const handleAskAi = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!aiPrompt.trim()) return;
-    setIsAiLoading(true);
-    setTimeout(() => {
-      setAiResponse(`এআই অ্যাসিস্ট্যান্ট উত্তর: "${aiPrompt}" - আপনার প্রশ্নটি সফলভাবে বিশ্লেষণ করা হয়েছে। দিলখুশ এন্টারপ্রাইজ ম্যানেজমেন্ট সিস্টেমের কার্যকারিতা বজায় রাখতে এটি অত্যন্ত চমৎকার একটি বিষয়! 🤖✨`);
-      setIsAiLoading(false);
-      showToast('AI Assistant responded successfully! 🤖');
-    }, 800);
-  };
-
   return (
     <div className="space-y-6 pb-28 w-full max-w-5xl mx-auto px-4 sm:px-6 animate-in fade-in duration-300">
       
       {/* Hub Header Banner */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-950/90 via-sky-950/90 to-gray-900 border border-sky-500/30 p-3 shadow-lg">
+      <div className={`relative overflow-hidden rounded-xl border p-3 shadow-lg ${
+        isDark
+          ? 'bg-gradient-to-r from-emerald-950/90 via-sky-950/90 to-gray-900 border-sky-500/30'
+          : 'bg-gradient-to-r from-emerald-50 via-sky-50 to-white border-sky-200 shadow-sm'
+      }`}>
         <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-sky-500/10 rounded-full blur-xl pointer-events-none"></div>
         <div className="relative z-10 flex items-center justify-between gap-3">
           <div className="space-y-0.5">
-            <h1 className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
-              <Compass className="w-4 h-4 text-sky-400" />
+            <h1 className={`text-sm font-black tracking-tight flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <Compass className={`w-4 h-4 ${isDark ? 'text-sky-400' : 'text-sky-600'}`} />
               🌟 দিলখুশ হাব (Hub)
             </h1>
-            <p className="text-[10px] text-gray-400 leading-tight">
-              নির্দেশিকা, রিমাইন্ডার, আইডিয়া, সতর্কতা, নিজস্ব অ্যাকশন ও এআই অ্যাসিস্ট্যান্ট।
+            <p className={`text-[10px] leading-tight ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+              নির্দেশিকা, রিমাইন্ডার, আইডিয়া, সতর্কতা ও নিজস্ব অ্যাকশন।
             </p>
           </div>
-          <div className="flex items-center gap-1.5 bg-gray-950/80 px-2 py-1 rounded-lg border border-sky-500/20 shadow-inner shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-[9px] font-bold text-emerald-400 font-sans">v{state.settings.version}</span>
+          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border shadow-inner shrink-0 ${
+            isDark ? 'bg-gray-950/80 border-sky-500/20' : 'bg-white border-sky-300'
+          }`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className={`text-[9px] font-bold font-sans ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>v{state.settings.version}</span>
           </div>
         </div>
       </div>
@@ -320,30 +310,40 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
         {/* 1. Special Instructions */}
         <div 
           onClick={() => setActiveModal('instructions')}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950/90 via-gray-900 to-slate-950 border border-indigo-500/50 hover:border-indigo-400 p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between"
+          className={`group relative overflow-hidden rounded-2xl border p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between ${
+            isDark
+              ? 'bg-gradient-to-br from-indigo-950/90 via-gray-900 to-slate-950 border-indigo-500/50 hover:border-indigo-400'
+              : 'bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 border-indigo-200 hover:border-indigo-400 shadow-sm hover:shadow-md'
+          }`}
         >
           <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition-all"></div>
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/25 border border-indigo-400/50 flex items-center justify-center text-lg shadow-md shadow-indigo-950">
+              <div className={`w-9 h-9 rounded-xl border flex items-center justify-center text-lg shadow-md ${
+                isDark ? 'bg-indigo-500/25 border-indigo-400/50 shadow-indigo-950' : 'bg-indigo-100 border-indigo-200 text-indigo-700'
+              }`}>
                 🎯
               </div>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setShowAddInstruction(true); }}
-                className="w-7 h-7 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-md shadow-indigo-950/50 transition-all active:scale-95"
+                className="w-7 h-7 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-md transition-all active:scale-95"
               >
                 <Plus className="w-4 h-4 font-black" />
               </button>
             </div>
-            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-indigo-300 transition-colors mb-1">
+            <h3 className={`text-sm sm:text-base font-black transition-colors mb-1 ${
+              isDark ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'
+            }`}>
               Special Instructions
             </h3>
-            <p className="text-[11px] text-gray-300 leading-snug line-clamp-2">
+            <p className={`text-[11px] leading-snug line-clamp-2 ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
               বিশেষ নির্দেশিকা ও অফিসিয়াল গাইডলাইন।
             </p>
           </div>
-          <div className="mt-4 pt-2.5 border-t border-indigo-950/80 flex items-center justify-between text-indigo-400 text-[11px] font-bold">
+          <div className={`mt-4 pt-2.5 border-t flex items-center justify-between text-[11px] font-bold ${
+            isDark ? 'border-indigo-950/80 text-indigo-400' : 'border-indigo-100 text-indigo-600'
+          }`}>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
@@ -352,30 +352,40 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
         {/* 2. Reminder */}
         <div 
           onClick={() => setActiveModal('reminder')}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-950/90 via-gray-900 to-slate-950 border border-amber-500/50 hover:border-amber-400 p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between"
+          className={`group relative overflow-hidden rounded-2xl border p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between ${
+            isDark
+              ? 'bg-gradient-to-br from-amber-950/90 via-gray-900 to-slate-950 border-amber-500/50 hover:border-amber-400'
+              : 'bg-gradient-to-br from-amber-50/70 via-white to-slate-50 border-amber-200 hover:border-amber-400 shadow-sm hover:shadow-md'
+          }`}
         >
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all"></div>
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/25 border border-amber-400/50 flex items-center justify-center text-lg shadow-md shadow-amber-950">
+              <div className={`w-9 h-9 rounded-xl border flex items-center justify-center text-lg shadow-md ${
+                isDark ? 'bg-amber-500/25 border-amber-400/50 shadow-amber-950' : 'bg-amber-100 border-amber-200 text-amber-700'
+              }`}>
                 ⏰
               </div>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setShowAddReminder(true); setActiveModal('reminder'); }}
-                className="w-7 h-7 rounded-lg bg-amber-500 hover:bg-amber-400 text-gray-950 flex items-center justify-center shadow-md shadow-amber-950/50 transition-all active:scale-95"
+                className="w-7 h-7 rounded-lg bg-amber-500 hover:bg-amber-400 text-gray-950 flex items-center justify-center shadow-md transition-all active:scale-95"
               >
                 <Plus className="w-4 h-4 font-black" />
               </button>
             </div>
-            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-amber-300 transition-colors mb-1">
+            <h3 className={`text-sm sm:text-base font-black transition-colors mb-1 ${
+              isDark ? 'text-white group-hover:text-amber-300' : 'text-slate-900 group-hover:text-amber-600'
+            }`}>
               Reminder
             </h3>
-            <p className="text-[11px] text-gray-300 leading-snug line-clamp-2">
+            <p className={`text-[11px] leading-snug line-clamp-2 ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
               দৈনিক কাজের রিমাইন্ডার ও নোটিফিকেশন।
             </p>
           </div>
-          <div className="mt-4 pt-2.5 border-t border-amber-950/80 flex items-center justify-between text-amber-400 text-[11px] font-bold">
+          <div className={`mt-4 pt-2.5 border-t flex items-center justify-between text-[11px] font-bold ${
+            isDark ? 'border-amber-950/80 text-amber-400' : 'border-amber-100 text-amber-600'
+          }`}>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
@@ -384,26 +394,38 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
         {/* 3. Own Ideas 💡 */}
         <div 
           onClick={() => setActiveModal('ideas')}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/90 via-gray-900 to-slate-950 border border-emerald-500/50 hover:border-emerald-400 p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between"
+          className={`group relative overflow-hidden rounded-2xl border p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between ${
+            isDark
+              ? 'bg-gradient-to-br from-emerald-950/90 via-gray-900 to-slate-950 border-emerald-500/50 hover:border-emerald-400'
+              : 'bg-gradient-to-br from-emerald-50/70 via-white to-slate-50 border-emerald-200 hover:border-emerald-400 shadow-sm hover:shadow-md'
+          }`}
         >
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/25 border border-emerald-400/50 flex items-center justify-center text-lg shadow-md shadow-emerald-950">
+              <div className={`w-9 h-9 rounded-xl border flex items-center justify-center text-lg shadow-md ${
+                isDark ? 'bg-emerald-500/25 border-emerald-400/50 shadow-emerald-950' : 'bg-emerald-100 border-emerald-200 text-emerald-700'
+              }`}>
                 💡
               </div>
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 uppercase tracking-wider">
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider ${
+                isDark ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+              }`}>
                 Creative
               </span>
             </div>
-            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-emerald-300 transition-colors mb-1">
+            <h3 className={`text-sm sm:text-base font-black transition-colors mb-1 ${
+              isDark ? 'text-white group-hover:text-emerald-300' : 'text-slate-900 group-hover:text-emerald-600'
+            }`}>
               Own Ideas 💡
             </h3>
-            <p className="text-[11px] text-gray-300 leading-snug line-clamp-2">
+            <p className={`text-[11px] leading-snug line-clamp-2 ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
               উদ্ভাবনী আইডিয়া ও প্রস্তাবনা যুক্ত করুন।
             </p>
           </div>
-          <div className="mt-4 pt-2.5 border-t border-emerald-950/80 flex items-center justify-between text-emerald-400 text-[11px] font-bold">
+          <div className={`mt-4 pt-2.5 border-t flex items-center justify-between text-[11px] font-bold ${
+            isDark ? 'border-emerald-950/80 text-emerald-400' : 'border-emerald-100 text-emerald-600'
+          }`}>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
@@ -412,30 +434,40 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
         {/* 4. Emergency & Urgent Tasks */}
         <div 
           onClick={() => setActiveModal('emergency')}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-950/90 via-gray-900 to-slate-950 border border-rose-500/50 hover:border-rose-400 p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between"
+          className={`group relative overflow-hidden rounded-2xl border p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between ${
+            isDark
+              ? 'bg-gradient-to-br from-rose-950/90 via-gray-900 to-slate-950 border-rose-500/50 hover:border-rose-400'
+              : 'bg-gradient-to-br from-rose-50/70 via-white to-slate-50 border-rose-200 hover:border-rose-400 shadow-sm hover:shadow-md'
+          }`}
         >
           <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-all"></div>
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center p-1.5 shadow-md shadow-rose-950">
+              <div className={`w-9 h-9 rounded-xl border flex items-center justify-center p-1.5 shadow-md ${
+                isDark ? 'bg-rose-500/20 border-rose-400/40 shadow-rose-950' : 'bg-rose-100 border-rose-200 text-rose-700'
+              }`}>
                 <EmergencyIcon className="w-6 h-6 object-contain drop-shadow" />
               </div>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setActiveModal('emergency'); /* Assume emergency modal has add logic */ }}
-                className="w-7 h-7 rounded-lg bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-md shadow-rose-950/50 transition-all active:scale-95"
+                onClick={(e) => { e.stopPropagation(); setActiveModal('emergency'); }}
+                className="w-7 h-7 rounded-lg bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-md transition-all active:scale-95"
               >
                 <Plus className="w-4 h-4 font-black" />
               </button>
             </div>
-            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-rose-300 transition-colors mb-1">
+            <h3 className={`text-sm sm:text-base font-black transition-colors mb-1 ${
+              isDark ? 'text-white group-hover:text-rose-300' : 'text-slate-900 group-hover:text-rose-600'
+            }`}>
               {isBn ? 'জরুরী কাজ ও অ্যালার্ট' : 'Emergency & Urgent Tasks'}
             </h3>
-            <p className="text-[11px] text-gray-300 leading-snug line-clamp-2">
+            <p className={`text-[11px] leading-snug line-clamp-2 ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
               {isBn ? 'জরুরী কাজ, বিশেষ নোটিশ ও হটলাইন সহায়তা।' : 'Urgent tasks, special notices, and hotline support.'}
             </p>
           </div>
-          <div className="mt-4 pt-2.5 border-t border-rose-950/80 flex items-center justify-between text-rose-400 text-[11px] font-bold">
+          <div className={`mt-4 pt-2.5 border-t flex items-center justify-between text-[11px] font-bold ${
+            isDark ? 'border-rose-950/80 text-rose-400' : 'border-rose-100 text-rose-600'
+          }`}>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
@@ -444,66 +476,42 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
         {/* 5. Own action */}
         <div 
           onClick={() => setActiveModal('action')}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-950/90 via-gray-900 to-slate-950 border border-sky-500/50 hover:border-sky-400 p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between"
+          className={`group relative overflow-hidden rounded-2xl border p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between ${
+            isDark
+              ? 'bg-gradient-to-br from-sky-950/90 via-gray-900 to-slate-950 border-sky-500/50 hover:border-sky-400'
+              : 'bg-gradient-to-br from-sky-50/70 via-white to-slate-50 border-sky-200 hover:border-sky-400 shadow-sm hover:shadow-md'
+          }`}
         >
           <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-full blur-xl group-hover:bg-sky-500/20 transition-all"></div>
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <div className="w-9 h-9 rounded-xl bg-sky-500/25 border border-sky-400/50 flex items-center justify-center text-lg shadow-md shadow-sky-950">
+              <div className={`w-9 h-9 rounded-xl border flex items-center justify-center text-lg shadow-md ${
+                isDark ? 'bg-sky-500/25 border-sky-400/50 shadow-sky-950' : 'bg-sky-100 border-sky-200 text-sky-700'
+              }`}>
                 🛠️
               </div>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setActiveModal('action'); }}
-                className="w-7 h-7 rounded-lg bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center shadow-md shadow-sky-950/50 transition-all active:scale-95"
+                className="w-7 h-7 rounded-lg bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center shadow-md transition-all active:scale-95"
               >
                 <Plus className="w-4 h-4 font-black" />
               </button>
             </div>
-            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-sky-300 transition-colors mb-1">
+            <h3 className={`text-sm sm:text-base font-black transition-colors mb-1 ${
+              isDark ? 'text-white group-hover:text-sky-300' : 'text-slate-900 group-hover:text-sky-600'
+            }`}>
               Own action
             </h3>
-            <p className="text-[11px] text-gray-300 leading-snug line-clamp-2">
+            <p className={`text-[11px] leading-snug line-clamp-2 ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
               নিজস্ব কর্মপরিকল্পনা ও টাস্ক লিস্ট।
             </p>
           </div>
-          <div className="mt-4 pt-2.5 border-t border-sky-950/80 flex items-center justify-between text-sky-400 text-[11px] font-bold">
+          <div className={`mt-4 pt-2.5 border-t flex items-center justify-between text-[11px] font-bold ${
+            isDark ? 'border-sky-950/80 text-sky-400' : 'border-sky-100 text-sky-600'
+          }`}>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }}>{isBn ? 'ম্যানেজ করুন' : 'Manage'}</span>
             <span onClick={(e) => { e.stopPropagation(); onNavigateTab('hub-manage'); }} className="group-hover:translate-x-1 transition-transform">→</span>
-          </div>
-        </div>
-
-        {/* 6. Ai assistant */}
-        <div 
-          onClick={() => {
-            if (onOpenAiAssistant) {
-              onOpenAiAssistant();
-            } else {
-              setActiveModal('ai');
-            }
-          }}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-950/90 via-gray-900 to-slate-950 border border-purple-500/50 hover:border-purple-400 p-4 shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer flex flex-col justify-between"
-        >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl group-hover:bg-purple-500/20 transition-all"></div>
-          <div>
-            <div className="flex items-center justify-between mb-2.5">
-              <div className="w-9 h-9 rounded-xl bg-purple-500/25 border border-purple-400/50 flex items-center justify-center text-lg shadow-md shadow-purple-950">
-                🤖
-              </div>
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/40 uppercase tracking-wider">
-                AI Smart
-              </span>
-            </div>
-            <h3 className="text-sm sm:text-base font-black text-white group-hover:text-purple-300 transition-colors mb-1">
-              Ai assistant
-            </h3>
-            <p className="text-[11px] text-gray-300 leading-snug line-clamp-2">
-              স্মার্ট এআই অ্যাসিস্ট্যান্টের সাথে কথা বলুন।
-            </p>
-          </div>
-          <div className="mt-4 pt-2.5 border-t border-purple-950/80 flex items-center justify-between text-purple-400 text-[11px] font-bold">
-            <span>প্রশ্ন করুন</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
         </div>
 
@@ -517,7 +525,9 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
       />
       {activeModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-gray-900 border border-sky-500/50 rounded-2xl sm:rounded-3xl w-full max-w-lg p-4 sm:p-5 shadow-2xl relative my-auto max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 overflow-hidden">
+          <div className={`border rounded-2xl sm:rounded-3xl w-full max-w-lg p-4 sm:p-5 shadow-2xl relative my-auto max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 overflow-hidden ${
+            isDark ? 'bg-gray-900 border-sky-500/50 text-white' : 'bg-white border-slate-200 shadow-2xl text-slate-900'
+          }`}>
             
             {/* Modal Header for Reminders (Fixed at top inside modal) */}
             {activeModal === 'reminder' ? (
@@ -1317,57 +1327,6 @@ export const HubView: React.FC<HubViewProps> = ({ state, showToast, onNavigateTa
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* 6. AI Assistant Modal */}
-            {activeModal === 'ai' && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-400/40 text-2xl">
-                    🤖
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-white">Ai assistant</h3>
-                    <p className="text-xs text-gray-400">স্মার্ট এআই অ্যাসিস্ট্যান্টের সাথে কথা বলুন</p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleAskAi} className="space-y-3 pt-2">
-                  <div>
-                    <textarea
-                      rows={3}
-                      value={aiPrompt}
-                      onChange={(e) => setAiPrompt.call ? setAiPrompt(e.target.value) : null}
-                      placeholder="আপনার যেকোনো প্রশ্ন বা এআই সাহায্য চান এখানে লিখুন... 🤖✨"
-                      className="w-full px-4 py-3 rounded-xl bg-gray-950 border border-purple-500/50 text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isAiLoading}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-950 transition-all flex items-center justify-center gap-2"
-                  >
-                    {isAiLoading ? (
-                      <span>বিশ্লেষণ করা হচ্ছে... ⏳</span>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        <span>এআই কে জিজ্ঞেস করুন</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-
-                {aiResponse && (
-                  <div className="p-4 rounded-xl bg-purple-950/60 border border-purple-700/60 text-sm text-purple-200 space-y-1 animate-in fade-in">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-400">
-                      <Sparkles className="w-4 h-4" />
-                      <span>এআই রেসপন্স:</span>
-                    </div>
-                    <p>{aiResponse}</p>
-                  </div>
-                )}
               </div>
             )}
 

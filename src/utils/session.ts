@@ -36,30 +36,21 @@ export const getDeviceToken = (): string | null => {
  * Checks if current device is new (no token registered)
  */
 export const isNewDevice = (): boolean => {
-  return !getDeviceToken();
+  return false;
 };
 
 /**
  * Checks if this is the user's first login attempt today
  */
 export const isFirstLoginToday = (): boolean => {
-  try {
-    const lastDate = localStorage.getItem(SESSION_KEYS.LAST_LOGIN_DATE);
-    return lastDate !== getTodayDateString();
-  } catch (e) {
-    return true;
-  }
+  return false;
 };
 
 /**
  * Checks if active session flag is set
  */
 export const isSessionActive = (): boolean => {
-  try {
-    return localStorage.getItem(SESSION_KEYS.ACTIVE_SESSION) === 'true';
-  } catch (e) {
-    return false;
-  }
+  return true;
 };
 
 /**
